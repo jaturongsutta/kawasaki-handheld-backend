@@ -25,7 +25,10 @@ export class BasicAuthGuard implements CanActivate {
     const [username, password] = credentials.split(":");
 
     // Replace with real credential check
-    if (username === "admin" && password === "password") {
+    if (
+      username === process.env.APP_USERNAME &&
+      password === process.env.APP_PASSWORD
+    ) {
       return true;
     }
 

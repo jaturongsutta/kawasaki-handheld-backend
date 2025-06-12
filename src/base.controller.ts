@@ -1,8 +1,8 @@
 import { Controller, UseGuards } from "@nestjs/common";
-import { BasicAuthGuard } from "./api/auth/guard/basic-auth.guard";
+import { JwtAuthGuard } from "./api/auth/guard/jwt-auth.guard";
 
 @Controller()
-@UseGuards(BasicAuthGuard)
+@UseGuards(JwtAuthGuard)
 export class BaseController {
   constructor() {}
 }
