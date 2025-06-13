@@ -1,8 +1,8 @@
-import { createLogger, format, transports } from 'winston';
-import 'winston-daily-rotate-file';
-import * as mssql from 'mssql';
-import * as path from 'path';
-import * as fs from 'fs';
+import { createLogger, format, transports } from "winston";
+import "winston-daily-rotate-file";
+import * as mssql from "mssql";
+import * as path from "path";
+import * as fs from "fs";
 const config = {
   user: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
@@ -21,9 +21,9 @@ const config = {
 // Custom filter to exclude NestJS start-up messages
 const excludeNestJsStart = format((info) => {
   const excludeMessages = [
-    'dependencies initialized',
-    'Mapped {/api',
-    'Controller {/api',
+    "dependencies initialized",
+    "Mapped {/api",
+    "Controller {/api",
   ];
 
   if (excludeMessages.some((msg) => (info.message as string).includes(msg))) {
@@ -34,8 +34,8 @@ const excludeNestJsStart = format((info) => {
 });
 
 const timezoned = () => {
-  return new Date().toLocaleString('en-US', {
-    timeZone: 'Asia/Bangkok',
+  return new Date().toLocaleString("en-US", {
+    timeZone: "Asia/Bangkok",
     hour12: false,
   });
 };
@@ -46,25 +46,25 @@ const customFormat = format.combine(
   format.timestamp({ format: timezoned }),
   format.printf(({ timestamp, level, stack, message }) => {
     return `${timestamp} - [${level.toUpperCase()}] - ${stack || message}`;
-  }),
+  })
 );
 
 const options = {
   file: {
     filename: `logs/error.log`,
-    level: 'error',
+    level: "error",
     format: format.combine(format.timestamp(), format.json()),
   },
   console: {
-    level: 'silly',
+    level: "silly",
   },
 };
 
 const _createLogger = async () => {
-  let logDir = path.join(process.env.ENV_DEVELOP_DIR, 'logs');
-  let logDirCombined = path.join(logDir, 'combined', '%DATE%.log');
-  let logDirError = path.join(logDir, 'error', '%DATE%-error.log');
-  if (process.env.ENV !== 'develop') {
+  let logDir = path.join(process.env.ENV_DEVELOP_DIR, "logs");
+  let logDirCombined = path.join(logDir, "combined", "%DATE%.log");
+  let logDirError = path.join(logDir, "error", "%DATE%-error.log");
+  if (process.env.ENV !== "develop") {
     try {
       await mssql.connect(config);
       const result =
@@ -73,19 +73,29 @@ const _createLogger = async () => {
       if (result.recordset.length > 0) {
         let existsSync = fs.existsSync(logDir);
         if (!existsSync) {
-          console.log('Create log directory');
+          console.log("Create log directory");
           fs.mkdirSync(logDir, { recursive: true }); // create log directory if not exists
         }
         existsSync = fs.existsSync(logDir);
         if (existsSync) {
-          logDirCombined = path.join(logDir, 'combined', '%DATE%.log');
-          logDirError = path.join(logDir, 'error', '%DATE%-error.log');
+          logDirCombined = path.join(
+            logDir,
+            "handheld",
+            "combined",
+            "%DATE%.log"
+          );
+          logDirError = path.join(
+            logDir,
+            "handheld",
+            "error",
+            "%DATE%-error.log"
+          );
         } else {
-          console.error('Log directory not found');
+          console.error("Log directory not found");
         }
       }
     } catch (error) {
-      console.error('Error get log directory from database', error);
+      console.error("Error get log directory from database", error);
     }
   }
 
@@ -93,24 +103,24 @@ const _createLogger = async () => {
     format: format.combine(
       format.timestamp(),
       format.errors({ stack: true }),
-      customFormat,
+      customFormat
     ),
     transports: [
       new transports.Console(options.console),
       new transports.DailyRotateFile({
         filename: logDirCombined,
         format: customFormat, //format.combine(format.timestamp(), format.json()),
-        datePattern: 'YYYY-MM-DD',
+        datePattern: "YYYY-MM-DD",
         zippedArchive: false,
-        maxFiles: '30d',
+        maxFiles: "30d",
       }),
       new transports.DailyRotateFile({
-        level: 'error',
+        level: "error",
         filename: logDirError,
         format: customFormat,
-        datePattern: 'YYYY-MM-DD',
+        datePattern: "YYYY-MM-DD",
         zippedArchive: false,
-        maxFiles: '30d',
+        maxFiles: "30d",
       }),
       ,
     ],
