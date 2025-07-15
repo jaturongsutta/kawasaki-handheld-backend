@@ -1,11 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
-import * as fs from 'fs';
-import * as path from 'path';
-import { connect, Transaction } from 'mssql';
+import { Injectable, Logger } from '@nestjs/common'
+import * as fs from 'fs'
+import * as path from 'path'
+import { connect, Transaction } from 'mssql'
 
 @Injectable()
 export class CommonService {
-  private readonly logger = new Logger(CommonService.name);
+  private readonly logger = new Logger(CommonService.name)
   private getConfig(): any {
     const config = {
       server: process.env.DB_HOST,
@@ -20,101 +20,101 @@ export class CommonService {
         min: 8,
         idleTimeoutMillis: 30000,
       },
-    };
+    }
 
-    return config;
+    return config
   }
 
   async getConnection() {
-    const config = this.getConfig();
-    const pool = await connect(config);
-    const req = await pool.request();
-    return req;
+    const config = this.getConfig()
+    const pool = await connect(config)
+    const req = await pool.request()
+    return req
   }
 
   async getConnectionAndBeginTrans() {
-    const config = this.getConfig();
-    const pool = await connect(config);
-    const transaction = new Transaction(pool);
-    await transaction.begin();
-    return transaction;
+    const config = this.getConfig()
+    const pool = await connect(config)
+    const transaction = new Transaction(pool)
+    await transaction.begin()
+    return transaction
   }
 
   async getRequest(trans: any) {
     if (trans) {
-      return await trans.request(trans);
+      return await trans.request(trans)
     } else {
-      return await trans.request();
+      return await trans.request()
     }
   }
 
   async dbConnect() {
-    const config = this.getConfig();
-    const pool = await connect(config);
-    const req = await pool.request();
-    return req;
+    const config = this.getConfig()
+    const pool = await connect(config)
+    const req = await pool.request()
+    return req
   }
 
   async getSearch(storedProcedure: string, req: any) {
-    const result = await req.execute(storedProcedure);
-    this.logger.log(JSON.stringify(this.getLogSql(req)));
+    const result = await req.execute(storedProcedure)
+    this.logger.log(JSON.stringify(this.getLogSql(req)))
     return {
       data: result.recordset,
       total_record:
         result.recordsets.length == 1
           ? result.recordset.length
           : result.recordsets[1][0].Total_Record,
-    };
+    }
   }
   // overload method
-  async executeStoreProcedure(storedProcedure: string, req: any);
-  async executeStoreProcedure(storedProcedure: string, req: any, log: boolean);
+  async executeStoreProcedure(storedProcedure: string, req: any)
+  async executeStoreProcedure(storedProcedure: string, req: any, log: boolean)
   async executeStoreProcedure(
     storedProcedure: string,
     req: any,
-    log: boolean = true,
+    log: boolean = true
   ) {
     try {
-      const result = await req.execute(storedProcedure);
+      const result = await req.execute(storedProcedure)
 
       if (log) {
-        this.logger.log(JSON.stringify(this.getLogSql(req)));
+        this.logger.log(JSON.stringify(this.getLogSql(req)))
 
         if (Object.keys(result.output).length > 0) {
-          this.logger.log(JSON.stringify(result.output));
+          this.logger.log(JSON.stringify(result.output))
         }
       }
 
-      return result;
+      return result
     } catch (error) {
-      this.logger.log(JSON.stringify(this.getLogSql(req)));
+      this.logger.log(JSON.stringify(this.getLogSql(req)))
       if (error.originalError) {
-        throw { message: error.originalError.message };
+        throw { message: error.originalError.message }
       }
-      throw error;
+      throw error
     }
   }
 
   async executeQuery(query: string) {
-    const config = this.getConfig();
+    const config = this.getConfig()
 
     try {
       // Get a connection from the pool
-      const pool = await connect(config);
+      const pool = await connect(config)
 
       // Create a request object using the connection
-      const request = pool.request();
+      const request = pool.request()
 
       // Execute the query using the request object
-      const result = await request.query(query);
+      const result = await request.query(query)
       // this.logger.log(query);
 
-      return result.recordset;
+      return result.recordset
 
       // Return the result
     } catch (error) {
       // Handle any errors that occur during execution
-      throw new Error(`Error executing the query: ${error.message}`);
+      throw new Error(`Error executing the query: ${error.message}`)
     }
   }
 
@@ -122,47 +122,47 @@ export class CommonService {
     filename: string,
     filedata: string,
     systemParamsCode: string,
-    isRename: boolean = true,
+    isRename: boolean = true
   ) {
     const result = await this.executeQuery(
-      `SELECT [param_value] FROM [dbo].[co_system_parameters]  WHERE param_type ='${systemParamsCode}'`,
-    );
+      `SELECT [param_value] FROM [dbo].[co_system_parameters]  WHERE param_type ='${systemParamsCode}'`
+    )
 
     if (result.length === 0) {
-      throw new Error(`System parameter ${systemParamsCode} not found`);
+      throw new Error(`System parameter ${systemParamsCode} not found`)
     }
 
     if (isRename) {
-      filename = this.renameFilenameWithDateTime(filename);
+      filename = this.renameFilenameWithDateTime(filename)
     }
 
-    const dirPath = result[0].param_value;
+    const dirPath = result[0].param_value
 
     const directoryPath =
       process.env.ENV === 'develop'
         ? path.join(process.env.UPLOAD_DIR, systemParamsCode)
-        : dirPath;
+        : dirPath
 
-    const dataFile = filedata.split(',')[1];
-    const buffer = Buffer.from(dataFile, 'base64');
-    const savePath = path.join(directoryPath, filename);
+    const dataFile = filedata.split(',')[1]
+    const buffer = Buffer.from(dataFile, 'base64')
+    const savePath = path.join(directoryPath, filename)
     // Ensure the directory exists
     if (!fs.existsSync(directoryPath)) {
-      fs.mkdirSync(directoryPath, { recursive: true });
+      fs.mkdirSync(directoryPath, { recursive: true })
     }
-    fs.writeFileSync(savePath, buffer);
+    fs.writeFileSync(savePath, buffer)
 
-    console.log('savePath : ', savePath);
+    console.log('savePath : ', savePath)
 
     return {
       filename: filename,
       path: savePath,
-    };
+    }
   }
 
   renameFilenameWithDateTime(originalFilename: string): string {
     // Get current date and time
-    const now = new Date();
+    const now = new Date()
 
     // Format date and time as 'yyyyMMddHHmmss'
     const dateTimeFormat = `${now.getFullYear()}${(now.getMonth() + 1)
@@ -173,19 +173,19 @@ export class CommonService {
       .padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now
       .getSeconds()
       .toString()
-      .padStart(2, '0')}`;
+      .padStart(2, '0')}`
 
     // Extract the file extension
-    const extensionMatch = originalFilename.match(/\.[0-9a-z]+$/i);
-    const extension = extensionMatch ? extensionMatch[0] : '';
+    const extensionMatch = originalFilename.match(/\.[0-9a-z]+$/i)
+    const extension = extensionMatch ? extensionMatch[0] : ''
 
     // Remove the extension from the original filename
-    const filenameWithoutExtension = originalFilename.replace(/\.[^/.]+$/, '');
+    const filenameWithoutExtension = originalFilename.replace(/\.[^/.]+$/, '')
 
     // Concatenate the filename, date-time string, and extension
-    const newFilename = `${filenameWithoutExtension}_${dateTimeFormat}${extension}`;
+    const newFilename = `${filenameWithoutExtension}_${dateTimeFormat}${extension}`
 
-    return newFilename;
+    return newFilename
   }
 
   getLogSql(p) {
@@ -193,18 +193,18 @@ export class CommonService {
       const jsonData = {
         script: p._currentRequest.sqlTextOrProcedure.replace(
           /(\r\n|\n|\r|\t)/gm,
-          ' ',
+          ' '
         ),
-      };
-
-      for (let i = 0; i < p._currentRequest.parameters.length; i++) {
-        const param = p._currentRequest.parameters[i];
-        jsonData[`@${param.name}`] = param.value === null ? null : param.value;
       }
 
-      return jsonData;
+      for (let i = 0; i < p._currentRequest.parameters.length; i++) {
+        const param = p._currentRequest.parameters[i]
+        jsonData[`@${param.name}`] = param.value === null ? null : param.value
+      }
+
+      return jsonData
     } else {
-      return null;
+      return null
     }
   }
 }

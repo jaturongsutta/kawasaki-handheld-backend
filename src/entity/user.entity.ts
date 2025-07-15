@@ -4,52 +4,54 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
-} from 'typeorm';
+} from 'typeorm'
 
 @Entity('um_User')
 export class User {
   @PrimaryGeneratedColumn({ name: 'User_ID' })
-  userId: number;
+  userId: number
 
   @Column({ name: 'Username', unique: true, length: 40 })
-  username: string;
+  username: string
 
   @Column({ name: 'User_Password', nullable: true, select: false, length: 200 })
-  userPassword: string;
+  userPassword: string
 
   @Column({ name: 'First_Name', nullable: true, length: 200 })
-  firstName: string;
+  firstName: string
 
   @Column({ name: 'Last_Name', nullable: true, length: 200 })
-  lastName: string;
+  lastName: string
 
   @Column({
     name: 'Position_Name',
     nullable: true,
     length: 200,
   })
-  positionName: string;
+  positionName: string
 
   @Column({ name: 'Is_Active', nullable: true, length: 1 })
-  isActive: string;
+  isActive: string
 
   @Column({ name: 'Created_By', nullable: true, type: 'int' })
-  createdBy: number;
+  createdBy: number
 
   @CreateDateColumn({
     name: 'Created_Date',
     nullable: true,
     type: 'datetime',
   })
-  createdDate: Date;
+  createdDate: Date
 
   @Column({ name: 'Updated_By', nullable: true, type: 'int' })
-  updateBy: number;
+  updateBy: number
 
   @UpdateDateColumn({
     name: 'Updated_Date',
     nullable: true,
     type: 'datetime',
   })
-  updateDate: Date;
+  updateDate: Date
+
+  roles: any
 }
