@@ -8,61 +8,61 @@ import {
   Post,
   Put,
   Request,
-} from '@nestjs/common';
-import { BaseController } from 'src/base.controller';
-import { UserService } from './user.service';
-import { UserDto } from './dto/user.dto';
-import { EncryptData } from 'src/_services/encrypt';
-import { UserChangePasswordDto } from './dto/user-change-password.dto';
-import { BaseResponse } from 'src/common/base-response';
+} from '@nestjs/common'
+import { BaseController } from 'src/base.controller'
+import { UserService } from './user.service'
+import { UserDto } from './dto/user.dto'
+import { EncryptData } from 'src/_services/encrypt'
+import { UserChangePasswordDto } from './dto/user-change-password.dto'
+import { BaseResponse } from 'src/common/base-response'
 
 @Controller('user')
-export class UserController extends BaseController {
-  private readonly logger = new Logger(UserController.name);
+export class UserController {
+  private readonly logger = new Logger(UserController.name)
 
   constructor(private userService: UserService) {
-    super();
+    // super()
   }
 
   @Get(':id')
   async getByID(@Param('id') id: number) {
-    return await this.userService.getByID(id);
+    return await this.userService.getByID(id)
   }
 
   @Post('search')
   async search(@Body() data: any) {
     try {
-      const result = await this.userService.search(data);
-      return result;
+      const result = await this.userService.search(data)
+      return result
     } catch (error) {
-      throw error;
+      throw error
     }
   }
 
   @Post()
   async addUser(
     @Body() data: UserDto,
-    @Request() req: any,
+    @Request() req: any
   ): Promise<BaseResponse> {
-    data.createdBy = req.user.userId;
+    data.createdBy = req.user.userId
 
     try {
       if (data.password) {
-        data.password = EncryptData.hash(data.password);
+        data.password = EncryptData.hash(data.password)
       }
 
-      const result = await this.userService.addUser(data);
+      const result = await this.userService.addUser(data)
 
       if (result) {
         return {
           status: 0,
-        };
+        }
       }
     } catch (error) {
       return {
         status: 1,
         message: error.message,
-      };
+      }
     }
   }
 
@@ -70,45 +70,71 @@ export class UserController extends BaseController {
   async updateUser(
     @Param('id') id: number,
     @Body() data: UserDto,
-    @Request() req: any,
+    @Request() req: any
   ): Promise<BaseResponse> {
-    data.updatedBy = req.user.userId;
+    data.updatedBy = req.user.userId
     if (data.password) {
-      data.password = EncryptData.hash(data.password);
+      data.password = EncryptData.hash(data.password)
     }
 
-    const result = await this.userService.updateUser(id, data);
+    const result = await this.userService.updateUser(id, data)
     if (result) {
       return {
         status: 0,
-      };
+      }
     }
   }
 
   @Post('change-password')
   async changePass(@Body() data: UserChangePasswordDto): Promise<BaseResponse> {
     try {
-      this.logger.log('User ' + data.userId + ' Change password');
-      const oldPassword = EncryptData.hash(data.oldPassword);
-      const newPassword = EncryptData.hash(data.newPassword);
+      this.logger.log('User ' + data.userId + ' Change password')
+      const oldPassword = EncryptData.hash(data.oldPassword)
+      const newPassword = EncryptData.hash(data.newPassword)
 
       const result = await this.userService.changePassword(
         data.userId,
         oldPassword,
-        newPassword,
-      );
-      return result;
+        newPassword
+      )
+      return result
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(error.message)
       return {
         status: 2,
         message: error.message,
-      };
+      }
     }
   }
 
   @Delete(':id')
   async deleteateUser(@Param('id') id: number) {
-    return await this.userService.deleteUser(id);
+    return await this.userService.deleteUser(id)
+  }
+
+  @Post('login')
+  async login(
+    @Body() body: { username: string; password: string; lineCd: string }
+  ) {
+    const hashedPassword = EncryptData.hash(body.password)
+    const userData = await this.userService.getByLogin(
+      body.username,
+      hashedPassword,
+      body.lineCd
+    )
+
+    if (!userData) {
+      return {
+        status: 1,
+        message: 'Invalid username or password',
+      }
+    }
+
+    return userData
+  }
+
+  @Post('lines')
+  async getLines() {
+    return await this.userService.getLineList()
   }
 }
