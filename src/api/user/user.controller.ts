@@ -133,7 +133,7 @@ export class UserController {
     return userData;
   }
 
-  @Get("lines")
+  @Post("lines")
   async getLines() {
     return await this.userService.getLineList();
   }
