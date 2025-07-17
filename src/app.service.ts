@@ -7,6 +7,7 @@ export class AppService {
   getHello(): any {
     return {
       appName: "Kawasaki Handheld Backend",
+      lastCommit: process.env.GIT_COMMIT_LOG ?? "",
       newDate: new Date(),
       getCurrentDate: getCurrentDate(),
       getCurrentDate_toISOString: getCurrentDate().toISOString(),
