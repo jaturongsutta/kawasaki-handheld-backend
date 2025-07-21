@@ -39,7 +39,7 @@ export class NGService {
 
       const reasonQuery = `
         SELECT DISTINCT Predefine_CD, Value_EN 
-        FROM co_Predefine 
+        FROM co_Predefine_Item 
         WHERE Predefine_Group = 'NG_Reason'
       `
 
@@ -82,7 +82,7 @@ export class NGService {
         (Plan_ID, Line_CD, Process_CD, NG_Date, NG_Time, Quantity, Reason, Comment, ID_Ref, Status, CREATED_DATE, CREATED_BY)
       VALUES
         (${dto.planId}, N'${dto.lineCd}', N'${dto.processCd}', N'${dto.ngDate}', N'${dto.ngTime}', ${dto.quantity},
-         N'${dto.reason}', N'${dto.comment}', '-', '00', GETDATE(), ${dto.createdBy})
+         N'${dto.reason}', N'${dto.comment}', NULL, '00', GETDATE(), ${dto.createdBy})
     `
 
       console.log(query)
@@ -121,6 +121,7 @@ export class NGService {
       }
     }
   }
+
   async getHistoricalList(dto: HistoricalRequestDto): Promise<any> {
     const req = await this.commonService.getConnection()
     req.input('Line_CD', dto.lineCd)

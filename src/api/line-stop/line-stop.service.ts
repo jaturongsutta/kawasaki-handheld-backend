@@ -39,7 +39,7 @@ export class LineStopService {
 
       const reasonQuery = `
         SELECT DISTINCT Predefine_CD, Value_EN 
-        FROM co_Predefine 
+        FROM co_Predefine_Item 
         WHERE Predefine_Group = 'Stop_Reason'
       `
 
