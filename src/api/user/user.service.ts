@@ -73,6 +73,18 @@ export class UserService {
 
       if (loginSuccess) {
         console.log('loginSuccess')
+        const result = await this.commonService.executeQuery(
+          `SELECT User_ID FROM um_user WHERE Username = '${username}'`
+        )
+
+        if (!result || result.length === 0) {
+          throw new Error('User not found')
+        }
+
+        console.log(result)
+
+        const userId = result[0].User_ID
+        console.log(userId)
 
         const mockUser: User = {
           userId: 1,
@@ -83,17 +95,17 @@ export class UserService {
           positionName: '',
           isActive: 'Y',
           createdBy: 100,
-          createdDate: new Date('2024-01-01T10:00:00Z'),
+          createdDate: new Date(),
           updateBy: 101,
-          updateDate: new Date('2024-06-01T15:30:00Z'),
+          updateDate: new Date(),
           roles: ['Admin', 'HandheldUser'],
         }
 
         return {
           result: true,
           data: {
-            userId: mockUser.userId,
-            username: mockUser.username,
+            userId: userId,
+            username: username,
             firstName: mockUser.firstName,
             lastName: mockUser.lastName,
             position: mockUser.positionName,

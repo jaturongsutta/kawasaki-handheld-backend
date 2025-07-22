@@ -31,14 +31,14 @@ export class LineStopService {
 
       console.log(`planResult ====> `, planResult)
       const processQuery = `
-        SELECT DISTINCT mlm.Process_CD 
+        SELECT DISTINCT mlm.Process_CD
         FROM M_Line_Machine mlm
         INNER JOIN M_Machine mmc ON mlm.Process_CD = mmc.Process_CD
         WHERE mlm.Line_CD = '${_tempLineCD}' and Model_CD= '${planRow?.Model_CD}'
       `
 
       const reasonQuery = `
-        SELECT DISTINCT Predefine_CD, Value_EN 
+        SELECT DISTINCT Predefine_Item_CD, Value_EN 
         FROM co_Predefine_Item 
         WHERE Predefine_Group = 'Stop_Reason'
       `
@@ -51,7 +51,7 @@ export class LineStopService {
         data: {
           process: processList.map((p) => p.Process_CD),
           reason: reasonList.map((r) => ({
-            code: r.Predefine_CD,
+            code: r.Predefine_Item_CD,
             label: r.Value_EN,
           })),
           plan: planRow, // แผนปัจจุบัน
