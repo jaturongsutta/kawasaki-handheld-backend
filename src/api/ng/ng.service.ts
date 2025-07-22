@@ -38,7 +38,7 @@ export class NGService {
       `
 
       const reasonQuery = `
-        SELECT DISTINCT Predefine_CD, Value_EN 
+        SELECT DISTINCT Predefine_Item_CD, Value_EN 
         FROM co_Predefine_Item 
         WHERE Predefine_Group = 'NG_Reason'
       `
@@ -51,7 +51,7 @@ export class NGService {
         data: {
           process: processList.map((p) => p.Process_CD),
           reason: reasonList.map((r) => ({
-            code: r.Predefine_CD,
+            code: r.Predefine_Item_CD,
             label: r.Value_EN,
           })),
           plan: planRow, // แผนปัจจุบัน
