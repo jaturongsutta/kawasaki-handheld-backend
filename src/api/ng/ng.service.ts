@@ -126,7 +126,7 @@ export class NGService {
     const req = await this.commonService.getConnection()
     req.input('Line_CD', dto.lineCd)
     req.input('Date_From', dto.dateFrom)
-    req.input('Date_To', new Date())
+    req.input('Date_To', dto.dateFrom)
     req.input('Row_No_From', dto.rowFrom)
     req.input('Row_No_To', dto.rowTo)
 
