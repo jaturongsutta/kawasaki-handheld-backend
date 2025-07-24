@@ -79,10 +79,10 @@ export class NGService {
 
       const query = `
       INSERT INTO NG_Record
-        (Plan_ID, Line_CD, Process_CD, NG_Date, NG_Time, Quantity, Reason, Comment, ID_Ref, Status, CREATED_DATE, CREATED_BY)
+        (Plan_ID, Line_CD, Process_CD, NG_Date, NG_Time, Quantity, Reason, Comment, ID_Ref, Status, CREATED_DATE, CREATED_BY,UPDATED_DATE,UPDATED_BY)
       VALUES
         (${dto.planId}, N'${dto.lineCd}', N'${dto.processCd}', N'${dto.ngDate}', N'${dto.ngTime}', ${dto.quantity},
-         N'${dto.reason}', N'${dto.comment}', NULL, '00', GETDATE(), ${dto.createdBy})
+         N'${dto.reason}', N'${dto.comment}', NULL, '00', GETDATE(), ${dto.createdBy},GETDATE(),${dto.createdBy})
     `
 
       console.log(query)

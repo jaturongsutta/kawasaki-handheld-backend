@@ -14,6 +14,7 @@ import { PredefineItemModule } from './api/predefine-item/predefine-item.module'
 import { MenuModule } from './api/menu/menu.module'
 import { NGModule } from './api/ng/ng.module'
 import { LineStopModule } from './api/line-stop/line-stop.module'
+import { ProductionstatusModule } from './api/productionstatus/productionstatus.module'
 dotenv.config() // Load environment variables from .env file
 @Module({
   imports: [
@@ -43,6 +44,7 @@ dotenv.config() // Load environment variables from .env file
     MenuModule,
     NGModule,
     LineStopModule,
+    ProductionstatusModule,
   ],
   controllers: [AppController],
   providers: [AppService],

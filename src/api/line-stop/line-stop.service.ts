@@ -92,9 +92,9 @@ export class LineStopService {
          '00',
          GETDATE(),
          ${dto.createdBy},
-         NULL,
-         NULL,
-         0)
+         GETDATE(),
+         ${dto.createdBy},
+         NULL)
     `
 
       console.log(query)
