@@ -18,10 +18,8 @@ export class NGService {
 
   async getNgInitialData(lineCd: string): Promise<any> {
     try {
-      const _tempLineCD = 'CYH#6'
-
       const req = await this.commonService.getConnection()
-      req.input('Line_CD', _tempLineCD)
+      req.input('Line_CD', lineCd)
 
       let planResult = await this.commonService.executeStoreProcedure(
         `sp_Prodcution_List_Running`,
@@ -34,7 +32,7 @@ export class NGService {
         SELECT DISTINCT mlm.Process_CD 
         FROM M_Line_Machine mlm
         INNER JOIN M_Machine mmc ON mlm.Process_CD = mmc.Process_CD
-        WHERE mlm.Line_CD = '${_tempLineCD}' and Model_CD= '${planRow?.Model_CD}'
+        WHERE mlm.Line_CD = '${lineCd}' and Model_CD= '${planRow?.Model_CD}'
       `
 
       const reasonQuery = `
