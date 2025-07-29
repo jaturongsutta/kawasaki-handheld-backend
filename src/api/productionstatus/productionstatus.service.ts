@@ -97,10 +97,12 @@ export class ProductionstatusService {
       // 1. ดึงข้อมูลเดิมก่อน
       req.input('plan_id', planId)
       const result = await req.query(`
-        SELECT plan_total_time, cycle_time 
-        FROM prod_plan 
-        WHERE id = @plan_id
-      `)
+      SELECT 
+        plan_total_time, 
+        DATEDIFF(SECOND, 0, cycle_time) AS cycle_seconds 
+      FROM prod_plan 
+      WHERE id = @plan_id
+    `)
 
       const current = result.recordset[0]
       if (!current) throw new Error('ไม่พบข้อมูลแผน')
@@ -116,27 +118,41 @@ export class ProductionstatusService {
       }
 
       // 3. คำนวณ target_fg ใหม่
+      const cycleSeconds = current.cycle_seconds
+      const cycleMinutes = cycleSeconds / 60
+
       const newTarget =
-        current.cycle_time > 0 ? Math.floor(newTime / current.cycle_time) : 0
+        cycleMinutes > 0 ? Math.floor(newTime / cycleMinutes) : 0
 
       // 4. อัปเดตข้อมูล
       const updateReq = await this.commonService.getConnection()
       updateReq.input('plan_id', planId)
       updateReq.input('new_time', newTime)
       updateReq.input('new_target', newTarget)
-      updateReq.input('ot', isOT ? 'Y' : null)
+      updateReq.input('ot', isOT ? 'Y' : 'N')
       updateReq.input('updated_by', updatedBy)
 
-      await updateReq.query(`
-        UPDATE prod_plan
-        SET
-          plan_total_time = @new_time,
-          plan_fg_amt = @new_target,
-          OT = @ot,
-          updated_by = @updated_by,
-          updated_date = GETDATE()
-        WHERE id = @plan_id
-      `)
+      console.log(`planId ====> ${planId}`)
+
+      console.log(`isOT ====> ${isOT}`)
+
+      console.log(`current.cycle_time ====> ${current.cycle_seconds}`)
+      console.log('cycleMinutes ===>', cycleMinutes) // ควรได้ 425.633
+
+      console.log(`newTime ====> ${newTime}`)
+
+      console.log(`newTarget ====> ${newTarget}`)
+
+      // await updateReq.query(`
+      //   UPDATE prod_plan
+      //   SET
+      //     plan_total_time = @new_time,
+      //     plan_fg_amt = @new_target,
+      //     OT = @ot,
+      //     updated_by = @updated_by,
+      //     updated_date = GETDATE()
+      //   WHERE id = @plan_id
+      // `)
       //   await updateReq.query(`
       //   UPDATE prod_plan
       //   SET
@@ -166,6 +182,7 @@ export class ProductionstatusService {
         SET 
           status = '30',
           Actual_Stop_Dt = GETDATE(),
+          Plan_Stop_Time = GETDATE(),
           updated_by = '${updatedBy}',
           updated_date = GETDATE()
         WHERE id = ${planId}
