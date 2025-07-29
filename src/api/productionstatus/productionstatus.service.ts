@@ -132,27 +132,16 @@ export class ProductionstatusService {
       updateReq.input('ot', isOT ? 'Y' : 'N')
       updateReq.input('updated_by', updatedBy)
 
-      console.log(`planId ====> ${planId}`)
-
-      console.log(`isOT ====> ${isOT}`)
-
-      console.log(`current.cycle_time ====> ${current.cycle_seconds}`)
-      console.log('cycleMinutes ===>', cycleMinutes) // ควรได้ 425.633
-
-      console.log(`newTime ====> ${newTime}`)
-
-      console.log(`newTarget ====> ${newTarget}`)
-
-      // await updateReq.query(`
-      //   UPDATE prod_plan
-      //   SET
-      //     plan_total_time = @new_time,
-      //     plan_fg_amt = @new_target,
-      //     OT = @ot,
-      //     updated_by = @updated_by,
-      //     updated_date = GETDATE()
-      //   WHERE id = @plan_id
-      // `)
+      await updateReq.query(`
+        UPDATE prod_plan
+        SET
+          plan_total_time = @new_time,
+          plan_fg_amt = @new_target,
+          OT = @ot,
+          updated_by = @updated_by,
+          updated_date = GETDATE()
+        WHERE id = @plan_id
+      `)
       //   await updateReq.query(`
       //   UPDATE prod_plan
       //   SET
