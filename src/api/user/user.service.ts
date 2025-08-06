@@ -55,7 +55,7 @@ export class UserService {
   async getByLogin(
     username: string,
     password: string,
-    lineCd: string // 🟢 รับจาก Flutter
+    lineCd: string
   ): Promise<{ result: boolean; data: any } | null> {
     try {
       const req = await this.commonService.getConnection()
@@ -67,37 +67,55 @@ export class UserService {
         'sp_handheld_Login',
         req
       )
+      console.log('🔍 Raw query result: ', res)
 
-      if (!res || !res.data || res.data.length === 0) {
+      const loginSuccess = res.output[''] === 1
+
+      if (loginSuccess) {
+        console.log('loginSuccess')
+        const result = await this.commonService.executeQuery(
+          `SELECT User_ID FROM um_user WHERE Username = '${username}'`
+        )
+
+        if (!result || result.length === 0) {
+          throw new Error('User not found')
+        }
+
+        console.log(result)
+
+        const userId = result[0].User_ID
+        console.log(userId)
+
+        const mockUser: User = {
+          userId: 1,
+          username: username,
+          userPassword: '', // ไม่จำเป็นต้องส่งกลับไป
+          firstName: '',
+          lastName: '',
+          positionName: '',
+          isActive: 'Y',
+          createdBy: 100,
+          createdDate: new Date(),
+          updateBy: 101,
+          updateDate: new Date(),
+          roles: ['Admin', 'HandheldUser'],
+        }
+
+        return {
+          result: true,
+          data: {
+            userId: userId,
+            username: username,
+            firstName: mockUser.firstName,
+            lastName: mockUser.lastName,
+            position: mockUser.positionName,
+            role: mockUser.roles, // หรือ map เป็น role ชื่อเต็มก็ได้
+          },
+        }
+      } else {
+        console.log('fail')
+
         return null
-      }
-      console.log('🔍 Raw query result: ', JSON.stringify(res, null, 2))
-
-      const mockUser: User = {
-        userId: 1,
-        username: username,
-        userPassword: '', // ไม่จำเป็นต้องส่งกลับไป
-        firstName: '',
-        lastName: '',
-        positionName: '',
-        isActive: 'Y',
-        createdBy: 100,
-        createdDate: new Date('2024-01-01T10:00:00Z'),
-        updateBy: 101,
-        updateDate: new Date('2024-06-01T15:30:00Z'),
-        roles: ['Admin', 'HandheldUser'],
-      }
-
-      return {
-        result: true,
-        data: {
-          userId: mockUser.userId,
-          username: mockUser.username,
-          firstName: mockUser.firstName,
-          lastName: mockUser.lastName,
-          position: mockUser.positionName,
-          role: mockUser.roles, // หรือ map เป็น role ชื่อเต็มก็ได้
-        },
       }
     } catch (error) {
       throw error

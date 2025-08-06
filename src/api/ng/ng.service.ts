@@ -18,10 +18,8 @@ export class NGService {
 
   async getNgInitialData(lineCd: string): Promise<any> {
     try {
-      const _tempLineCD = 'CYH#6'
-
       const req = await this.commonService.getConnection()
-      req.input('Line_CD', _tempLineCD)
+      req.input('Line_CD', lineCd)
 
       let planResult = await this.commonService.executeStoreProcedure(
         `sp_Prodcution_List_Running`,
@@ -34,12 +32,12 @@ export class NGService {
         SELECT DISTINCT mlm.Process_CD 
         FROM M_Line_Machine mlm
         INNER JOIN M_Machine mmc ON mlm.Process_CD = mmc.Process_CD
-        WHERE mlm.Line_CD = '${_tempLineCD}' and Model_CD= '${planRow?.Model_CD}'
+        WHERE mlm.Line_CD = '${lineCd}' and Model_CD= '${planRow?.Model_CD}'
       `
 
       const reasonQuery = `
-        SELECT DISTINCT Predefine_CD, Value_EN 
-        FROM co_Predefine 
+        SELECT DISTINCT Predefine_Item_CD, Value_EN 
+        FROM co_Predefine_Item 
         WHERE Predefine_Group = 'NG_Reason'
       `
 
@@ -51,7 +49,7 @@ export class NGService {
         data: {
           process: processList.map((p) => p.Process_CD),
           reason: reasonList.map((r) => ({
-            code: r.Predefine_CD,
+            code: r.Predefine_Item_CD,
             label: r.Value_EN,
           })),
           plan: planRow, // แผนปัจจุบัน
@@ -79,10 +77,10 @@ export class NGService {
 
       const query = `
       INSERT INTO NG_Record
-        (Plan_ID, Line_CD, Process_CD, NG_Date, NG_Time, Quantity, Reason, Comment, ID_Ref, Status, CREATED_DATE, CREATED_BY)
+        (Plan_ID, Line_CD, Process_CD, NG_Date, NG_Time, Quantity, Reason, Comment, ID_Ref, Status, CREATED_DATE, CREATED_BY,UPDATED_DATE,UPDATED_BY)
       VALUES
         (${dto.planId}, N'${dto.lineCd}', N'${dto.processCd}', N'${dto.ngDate}', N'${dto.ngTime}', ${dto.quantity},
-         N'${dto.reason}', N'${dto.comment}', '-', '00', GETDATE(), ${dto.createdBy})
+         N'${dto.reason}', N'${dto.comment}', NULL, '00', GETDATE(), ${dto.createdBy},GETDATE(),${dto.createdBy})
     `
 
       console.log(query)
@@ -121,11 +119,12 @@ export class NGService {
       }
     }
   }
+
   async getHistoricalList(dto: HistoricalRequestDto): Promise<any> {
     const req = await this.commonService.getConnection()
     req.input('Line_CD', dto.lineCd)
     req.input('Date_From', dto.dateFrom)
-    req.input('Date_To', new Date())
+    req.input('Date_To', dto.dateFrom)
     req.input('Row_No_From', dto.rowFrom)
     req.input('Row_No_To', dto.rowTo)
 
