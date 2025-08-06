@@ -26,7 +26,7 @@ export class AlertService {
   ) {}
   private devices: DeviceInfo[] = []
 
-  @Interval(600000)
+  @Interval(60000)
   async handlePushInfoAlert() {
     const lineCd = ''
     const ip = ''
@@ -40,12 +40,24 @@ export class AlertService {
     }
   }
 
-  sendTCP(ip: string, port: number, message: string): Promise<any> {
+  sendTCP(
+    ip: string,
+    port: number,
+    title: string,
+    description: string
+  ): Promise<any> {
     return new Promise((resolve, reject) => {
       const client = new net.Socket()
 
       client.connect(port, ip, () => {
         console.log(`✅ Connected to ${ip}:${port}`)
+
+        // ส่งข้อมูลเป็น JSON string
+        const message = JSON.stringify({
+          title,
+          description,
+        })
+
         client.write(message)
         client.end()
         resolve({ status: 'sent', to: `${ip}:${port}` })
@@ -55,24 +67,6 @@ export class AlertService {
         console.error(`❌ TCP Error to ${ip}:${port}`, err.message)
         reject({ error: err.message, to: `${ip}:${port}` })
       })
-    })
-  }
-
-  async sendMultipleTCP(
-    targets: { ip: string; port: number }[],
-    message: string
-  ): Promise<any[]> {
-    const results = await Promise.allSettled(
-      targets.map((target) => this.sendTCP(target.ip, target.port, message))
-    )
-
-    return results.map((result, index) => {
-      const { ip, port } = targets[index]
-      if (result.status === 'fulfilled') {
-        return result.value
-      } else {
-        return { error: result.reason?.message, to: `${ip}:${port}` }
-      }
     })
   }
 
@@ -101,13 +95,15 @@ export class AlertService {
       const targets = rows.map((row) => ({
         ip: row.IP_Address,
         port: 4000,
-        message: row.Header_Alert,
+        title: row.Header_Alert,
+        description: row.Info_Alert,
+        message: `${row.Header_Alert}\n${row.Info_Alert}`,
       }))
 
       // 4. ส่งข้อความ TCP ไปยังแต่ละเครื่อง
       const results = await Promise.allSettled(
         targets.map((t) =>
-          this.sendTCP(t.ip, t.port, t.message).catch((err) =>
+          this.sendTCP(t.ip, t.port, t.title, t.description).catch((err) =>
             Promise.reject(err)
           )
         )
@@ -115,12 +111,14 @@ export class AlertService {
 
       // 5. แปลงผลลัพธ์
       return results.map((res, index) => {
-        const { ip, port, message } = targets[index]
+        const { ip, port, title, description } = targets[index]
         return res.status === 'fulfilled'
-          ? { to: `${ip}:${port}`, status: 'sent', message }
+          ? { to: `${ip}:${port}`, status: 'sent', title, description }
           : {
               to: `${ip}:${port}`,
               status: 'failed',
+              title,
+              description,
               error: res.reason?.message ?? 'Unknown error',
             }
       })
