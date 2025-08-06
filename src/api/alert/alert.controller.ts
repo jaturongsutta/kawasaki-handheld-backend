@@ -16,25 +16,25 @@ import { MarkReadDto } from './dto/mark-read.dto'
 export class AlertController {
   constructor(private readonly alertService: AlertService) {}
 
-  @Post('send')
-  async sendAlert(@Body() body: any, @Res() res: Response) {
-    const { targets, message } = body
+  // @Post('send')
+  // async sendAlert(@Body() body: any, @Res() res: Response) {
+  //   const { targets, message } = body
 
-    if (!targets || !Array.isArray(targets) || !message) {
-      return res.status(HttpStatus.BAD_REQUEST).json({
-        error: 'targets (ip, port) array and message are required',
-      })
-    }
+  //   if (!targets || !Array.isArray(targets) || !message) {
+  //     return res.status(HttpStatus.BAD_REQUEST).json({
+  //       error: 'targets (ip, port) array and message are required',
+  //     })
+  //   }
 
-    try {
-      const results = await this.alertService.sendMultipleTCP(targets, message)
-      return res.status(HttpStatus.OK).json({ status: 'done', results })
-    } catch (error) {
-      return res
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .json({ error: error.message })
-    }
-  }
+  //   try {
+  //     const results = await this.alertService.sendMultipleTCP(targets, message)
+  //     return res.status(HttpStatus.OK).json({ status: 'done', results })
+  //   } catch (error) {
+  //     return res
+  //       .status(HttpStatus.INTERNAL_SERVER_ERROR)
+  //       .json({ error: error.message })
+  //   }
+  // }
 
   @Post('register-device')
   async registerDevice(@Body() body: RegisterDeviceDto) {
