@@ -8,6 +8,7 @@ import { UserSearchDto } from './dto/user-search.dto'
 import { UserChangePasswordDto } from './dto/user-change-password.dto'
 import { BaseResponse } from 'src/common/base-response'
 import { UserRole } from 'src/entity/user-role.entity'
+import { LineContextService } from 'src/_services/line-context.service'
 
 @Injectable()
 export class UserService {
@@ -16,7 +17,8 @@ export class UserService {
     @InjectRepository(UserRole)
     private userRoleRepository: Repository<UserRole>,
     private commonService: CommonService,
-    private dataSource: DataSource
+    private dataSource: DataSource,
+    private readonly lineContext: LineContextService
   ) {}
 
   async getByID(id: number): Promise<UserDto> {
@@ -100,6 +102,9 @@ export class UserService {
           updateDate: new Date(),
           roles: ['Admin', 'HandheldUser'],
         }
+        console.log(`line cd===>${lineCd} `)
+        this.lineContext.set(lineCd)
+        console.log(`get line cd===>${this.lineContext.get()} `)
 
         return {
           result: true,

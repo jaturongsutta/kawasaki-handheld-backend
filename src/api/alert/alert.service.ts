@@ -8,6 +8,7 @@ import { InfoAlertRequestDto } from './dto/info-alert-request.dto'
 import { CommonService } from 'src/common/common.service'
 import { Interval } from '@nestjs/schedule'
 import { MarkReadDto } from './dto/mark-read.dto'
+import { LineContextService } from 'src/_services/line-context.service'
 
 interface DeviceInfo {
   deviceId: string
@@ -22,11 +23,12 @@ export class AlertService {
     private lineDeviceRepository: Repository<LineDevice>,
     private readonly commonService: CommonService,
     @InjectDataSource()
-    private readonly dataSource: DataSource
+    private readonly dataSource: DataSource,
+    private readonly lineContext: LineContextService
   ) {}
   private devices: DeviceInfo[] = []
 
-  @Interval(60000)
+  @Interval(6000)
   async handlePushInfoAlert() {
     const lineCd = ''
     const ip = ''
@@ -77,8 +79,14 @@ export class AlertService {
   ): Promise<any[]> {
     try {
       // 1. สร้าง connection
+      const effectiveLineCd = lineCD || this.lineContext.get()
+      // if (!effectiveLineCd) {
+      //   console.warn('⚠️ No Line_CD provided or stored. Skip push.')
+      //   return []
+      // }
+
       const conn = await this.commonService.getConnection()
-      conn.input('Line_CD', lineCD)
+      conn.input('Line_CD', effectiveLineCd)
       conn.input('IP_Address', ip)
       conn.input('MAC_Address', mac)
 
@@ -180,6 +188,7 @@ export class AlertService {
     req.input('Line_CD', dto.lineCd)
     req.input('Row_No_From', dto.rowFrom)
     req.input('Row_No_To', dto.rowTo)
+    req.input('userID', dto.userID)
 
     const result = await this.commonService.executeStoreProcedure(
       'sp_handheld_InfoAlert',

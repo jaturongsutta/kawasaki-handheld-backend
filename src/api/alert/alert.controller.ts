@@ -55,6 +55,7 @@ export class AlertController {
     dto.lineCd = body.Line_CD // 👈 Mapping ด้วยตนเอง
     dto.rowFrom = body.Row_No_From
     dto.rowTo = body.Row_No_To
+    dto.userID = body.userID
 
     return await this.alertService.getInfoAlerts(dto)
   }
