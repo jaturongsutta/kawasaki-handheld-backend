@@ -28,7 +28,7 @@ export class AlertService {
   ) {}
   private devices: DeviceInfo[] = []
 
-  @Interval(6000)
+  @Interval(600000)
   async handlePushInfoAlert() {
     const lineCd = ''
     const ip = ''
