@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { TypeOrmModule } from '@nestjs/typeorm'
@@ -16,6 +16,7 @@ import { NGModule } from './api/ng/ng.module'
 import { LineStopModule } from './api/line-stop/line-stop.module'
 import { ProductionstatusModule } from './api/productionstatus/productionstatus.module'
 import { AlertModule } from './api/alert/alert.module'
+import { LineContextModule } from './modules/context.module'
 dotenv.config() // Load environment variables from .env file
 @Module({
   imports: [
@@ -47,6 +48,7 @@ dotenv.config() // Load environment variables from .env file
     LineStopModule,
     ProductionstatusModule,
     AlertModule,
+    LineContextModule,
   ],
   controllers: [AppController],
   providers: [AppService],
