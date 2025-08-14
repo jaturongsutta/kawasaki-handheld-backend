@@ -23,7 +23,7 @@ export class ProductionstatusService {
       req.input('Line_CD', lineCd)
 
       const result = await this.commonService.executeStoreProcedure(
-        'sp_Plan_List_Current',
+        'sp_handheld_Plan_List_Current',
         req
       )
 
