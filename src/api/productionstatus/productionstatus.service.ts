@@ -9,6 +9,7 @@ import { UserRole } from 'src/entity/user-role.entity'
 import { NgRecordDto } from './dto/ngrecord.dto'
 import { HistoricalRequestDto } from './dto/historical.dto'
 import { PlanSearchDto } from './dto/Plansearch.dto'
+import { CheckOtDto } from './dto/check-ot.dto'
 
 @Injectable()
 export class ProductionstatusService {
@@ -62,22 +63,49 @@ export class ProductionstatusService {
     }
   }
 
-  async checkOTAvailable(planId: number): Promise<any> {
+  async checkOTAvailable(dto: CheckOtDto): Promise<any> {
     try {
-      const req = await this.commonService.getConnection()
-      req.input('plan_id', planId)
+      // req.input('plan_id', planId)
 
-      const result = await this.commonService.executeStoreProcedure(
-        'sp_handheld_chk_OT',
-        req
+      // const result = await this.commonService.executeStoreProcedure(
+      //   'sp_handheld_chk_OT',
+      //   req
+      // )
+      const conn = await this.commonService.getConnection() // ตามโครงของคุณ
+      conn.input('Line_CD', dto.Line_CD)
+      conn.input('StartDT', dto.Plan_Start_DT)
+      conn.input('StopDT', dto.Plan_Stop_DT)
+      conn.input('B1', dto.B1)
+      conn.input('B2', dto.B2)
+      conn.input('B3', dto.B3)
+      conn.input('B4', dto.B4)
+      conn.input('OT', dto.OT)
+      conn.input('Shift_Period', dto.Shift_Period)
+      conn.input('Id', dto.id)
+      const recordset = await conn.query(
+        `
+          SELECT dbo.fn_chk_Plan_Break_Time(
+            @Line_CD, @StartDT, @StopDT, @B1, @B2, @B3, @B4, @OT, @Shift_Period, @Id
+          ) AS Time_Mins
+        `,
+        conn
       )
-
-      return {
-        result: true,
-        data: result.recordset,
+      console.log(`recordset ===> ${recordset.recordsets[0][0].Time_Mins}`)
+      if (recordset.recordsets[0][0].Time_Mins > 0) {
+        return {
+          result: false,
+          // data: result.recordset,
+          message:
+            'กรุณาตรวจสอบ ช่วงเวลา Break/OT ไม่อยู่ในช่วงเวลา Plan Start and Stop time',
+        }
+      } else {
+        return {
+          result: true,
+          // data: result.recordset,
+        }
       }
     } catch (error) {
-      ;``
+      console.log(error)
       return {
         result: false,
         message: error.message,
@@ -88,76 +116,81 @@ export class ProductionstatusService {
   async updatePlanOTStatus(
     planId: number,
     isOT: boolean,
-    timeMins: number,
+    dto: CheckOtDto,
+    cycletime: any,
     updatedBy: string
   ) {
     try {
       const req = await this.commonService.getConnection()
 
-      // 1. ดึงข้อมูลเดิมก่อน
-      req.input('plan_id', planId)
-      const result = await req.query(`
-      SELECT 
-        plan_total_time, 
-        DATEDIFF(SECOND, 0, cycle_time) AS cycle_seconds 
-      FROM prod_plan 
-      WHERE id = @plan_id
-    `)
+      // --- Bind input สำหรับฟังก์ชัน ---
+      req.input('Line_CD', dto.Line_CD)
+      req.input('Plan_date', dto.Plan_Start_DT.split(' ')[0]) // YYYY-MM-DD
+      req.input('Plan_Start_Time', dto.Plan_Start_DT.split(' ')[1]) // HH:mm:ss
+      req.input('Plan_Stop_Time', dto.Plan_Stop_DT) // HH:mm:ss (เวลาอย่างเดียว)
+      req.input('B1', dto.B1)
+      req.input('B2', dto.B2)
+      req.input('B3', dto.B3)
+      req.input('B4', dto.B4)
+      req.input('OT', dto.OT)
 
-      const current = result.recordset[0]
-      if (!current) throw new Error('ไม่พบข้อมูลแผน')
+      // --- คำนวณเวลารวมจากฟังก์ชัน ---
+      const { recordset } = await req.query(`
+        SELECT dbo.fn_get_Plan_OperTime(
+          @Line_CD, 
+          @Plan_date, 
+          @Plan_Start_Time, 
+          @Plan_Stop_Time, 
+          @B1, @B2, @B3, @B4, @OT
+        ) AS OperTimeMins
+      `)
 
-      let newTime = current.plan_total_time
+      const totalPlanTime = recordset?.[0]?.OperTimeMins ?? 0
 
-      // 2. คำนวณเพิ่มหรือลบ Time_Mins
-      if (isOT) {
-        newTime += timeMins
-      } else {
-        newTime -= timeMins
-        if (newTime < 0) newTime = 0
-      }
+      // --- คำนวณจำนวนเป้า (ชิ้น) ---
+      // cycletime = นาทีต่อชิ้น (เช่น 5.5 นาที/ชิ้น)
+      const planTargetFg =
+        cycletime > 0 ? Math.floor(totalPlanTime / cycletime) : 0
 
-      // 3. คำนวณ target_fg ใหม่
-      const cycleSeconds = current.cycle_seconds
-      const cycleMinutes = cycleSeconds / 60
-
-      const newTarget =
-        cycleMinutes > 0 ? Math.floor(newTime / cycleMinutes) : 0
-
-      // 4. อัปเดตข้อมูล
+      // --- Update prod_plan ---
       const updateReq = await this.commonService.getConnection()
       updateReq.input('plan_id', planId)
-      updateReq.input('new_time', newTime)
-      updateReq.input('new_target', newTarget)
+      updateReq.input('new_time', totalPlanTime)
+      updateReq.input('new_target', planTargetFg)
       updateReq.input('ot', isOT ? 'Y' : 'N')
+      updateReq.input('b1', dto.B1)
+      updateReq.input('b2', dto.B2)
+      updateReq.input('b3', dto.B3)
+      updateReq.input('b4', dto.B4)
       updateReq.input('updated_by', updatedBy)
 
       await updateReq.query(`
         UPDATE prod_plan
         SET
           plan_total_time = @new_time,
-          plan_fg_amt = @new_target,
-          OT = @ot,
-          updated_by = @updated_by,
-          updated_date = GETDATE()
+          plan_fg_amt  = @new_target,
+          OT              = @ot,
+          B1              = @b1,
+          B2              = @b2,
+          B3              = @b3,
+          B4              = @b4,
+          updated_by      = @updated_by,
+          updated_date    = GETDATE()
         WHERE id = @plan_id
       `)
-      //   await updateReq.query(`
-      //   UPDATE prod_plan
-      //   SET
-      //     plan_total_time = @new_time,
-      //     OT = @ot,
-      //     updated_by = @updated_by,
-      //     updated_date = GETDATE()
-      //   WHERE id = @plan_id
-      // `)
 
-      return { result: true }
-    } catch (error) {
-      console.error('❌ Error in updatePlanOTStatus:', error)
+      return {
+        result: true,
+        data: {
+          plan_total_time: totalPlanTime,
+          plan_target_fg: planTargetFg,
+        },
+      }
+    } catch (error: any) {
+      console.error(' Error in updatePlanOTStatus:', error)
       return {
         result: false,
-        message: error.message || 'ไม่สามารถอัปเดตข้อมูลได้',
+        message: error?.message || 'ไม่สามารถอัปเดตข้อมูลได้',
       }
     }
   }
