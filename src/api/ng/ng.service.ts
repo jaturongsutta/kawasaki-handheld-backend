@@ -74,7 +74,27 @@ export class NGService {
     try {
       const request = this.dataSource.createQueryRunner()
       await request.connect()
+      const stopDT = `${dto.ngDate} ${dto.ngTime}`
+      const chk = await request.query(
+        `
+        SELECT dbo.fn_chk_NGStop_Datetime(
+          @0,
+          CONVERT(DATETIME, @1, 120),
+          @2
+        ) AS Result
+      `,
+        [dto.lineCd, stopDT, dto.planId]
+      )
 
+      const resultNum = chk?.[0]?.Result ?? 0
+      if (resultNum > 0) {
+        await request.rollbackTransaction()
+        return {
+          result: false,
+          message:
+            'กรุณาตรวจสอบ ช่วงเวลา Stop Line ไม่อยู่ในช่วงเวลา Plan Start และ Stop time',
+        }
+      }
       const query = `
       INSERT INTO NG_Record
         (Plan_ID, Line_CD, Process_CD, NG_Date, NG_Time, Quantity, Reason, Comment, ID_Ref, Status, CREATED_DATE, CREATED_BY,UPDATED_DATE,UPDATED_BY)

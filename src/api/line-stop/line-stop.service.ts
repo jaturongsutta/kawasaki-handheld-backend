@@ -74,6 +74,27 @@ export class LineStopService {
     try {
       const request = this.dataSource.createQueryRunner()
       await request.connect()
+      const stopDT = `${dto.lineStopDate} ${dto.lineStopTime}`
+      const chk = await request.query(
+        `
+        SELECT dbo.fn_chk_NGStop_Datetime(
+          @0,
+          CONVERT(DATETIME, @1, 120),
+          @2
+        ) AS Result
+      `,
+        [dto.lineCd, stopDT, dto.planId]
+      )
+
+      const resultNum = chk?.[0]?.Result ?? 0
+      if (resultNum > 0) {
+        await request.rollbackTransaction()
+        return {
+          result: false,
+          message:
+            'กรุณาตรวจสอบ ช่วงเวลา Stop Line ไม่อยู่ในช่วงเวลา Plan Start และ Stop time',
+        }
+      }
 
       const query = `
       INSERT INTO Line_Stop_Record

@@ -17,6 +17,7 @@ import { NgRecordDto } from './dto/ngrecord.dto'
 import { HistoricalRequestDto } from './dto/historical.dto'
 import { ProductionStatusDto } from './dto/production-status.dto'
 import { PlanSearchDto } from './dto/Plansearch.dto'
+import { CheckOtDto } from './dto/check-ot.dto'
 
 @Controller('production-status')
 export class ProductionstatusController {
@@ -37,17 +38,18 @@ export class ProductionstatusController {
   }
 
   @Post('check-ot')
-  checkOt(@Body('plan_id') planId: number) {
-    return this.productionStatusService.checkOTAvailable(planId)
+  checkOt(@Body() dto: CheckOtDto) {
+    return this.productionStatusService.checkOTAvailable(dto)
   }
 
   @Post('update-ot')
   async updateOT(@Body() body) {
-    const { plan_id, is_ot, time_mins, updated_by } = body
+    const { plan_id, is_ot, data, cycletime, updated_by } = body
     return this.productionStatusService.updatePlanOTStatus(
       plan_id,
       is_ot,
-      time_mins,
+      data,
+      cycletime,
       updated_by
     )
   }
