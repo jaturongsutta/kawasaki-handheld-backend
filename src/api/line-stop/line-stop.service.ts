@@ -53,7 +53,7 @@ export class LineStopService {
             label: r.Value_EN,
           })),
           plan: planRow, // แผนปัจจุบัน
-          default: {
+          defaults: {
             ngDate: new Date().toISOString().split('T')[0], // yyyy-mm-dd
             ngTime: new Date().toTimeString().split(' ')[0], // HH:mm:ss
             quantity: 1,
