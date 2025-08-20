@@ -92,7 +92,7 @@ export class NGService {
         return {
           result: false,
           message:
-            'กรุณาตรวจสอบ ช่วงเวลา Stop Line ไม่อยู่ในช่วงเวลา Plan Start และ Stop time',
+            'กรุณาตรวจสอบ ช่วงเวลา NG ไม่อยู่ในช่วงเวลา Plan Start และ Stop time',
         }
       }
       const query = `
