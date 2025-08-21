@@ -44,12 +44,12 @@ export class ProductionstatusController {
 
   @Post('update-ot')
   async updateOT(@Body() body) {
-    const { plan_id, is_ot, data, cycletime, updated_by } = body
+    const { plan_id, is_ot, data, cycleTime, updated_by } = body
     return this.productionStatusService.updatePlanOTStatus(
       plan_id,
       is_ot,
       data,
-      cycletime,
+      cycleTime,
       updated_by
     )
   }
