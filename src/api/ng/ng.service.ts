@@ -87,8 +87,9 @@ export class NGService {
       )
 
       const resultNum = chk?.[0]?.Result ?? 0
+
+      console.log(`resultNum ---> ${resultNum}`)
       if (resultNum > 0) {
-        await request.rollbackTransaction()
         return {
           result: false,
           message:

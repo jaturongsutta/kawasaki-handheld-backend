@@ -88,7 +88,6 @@ export class LineStopService {
 
       const resultNum = chk?.[0]?.Result ?? 0
       if (resultNum > 0) {
-        await request.rollbackTransaction()
         return {
           result: false,
           message:
