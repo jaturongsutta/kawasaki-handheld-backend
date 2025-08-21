@@ -10,6 +10,7 @@ import { NgRecordDto } from './dto/ngrecord.dto'
 import { HistoricalRequestDto } from './dto/historical.dto'
 import { PlanSearchDto } from './dto/Plansearch.dto'
 import { CheckOtDto } from './dto/check-ot.dto'
+import { inspect } from 'util'
 
 @Injectable()
 export class ProductionstatusService {
@@ -27,6 +28,8 @@ export class ProductionstatusService {
         'sp_handheld_Plan_List_Current',
         req
       )
+
+      console.log(result.recordsets[0])
 
       return {
         result: true,
@@ -117,25 +120,43 @@ export class ProductionstatusService {
     planId: number,
     isOT: boolean,
     dto: CheckOtDto,
-    cycletime: any,
+    cycletime: number,
     updatedBy: string
   ) {
-    try {
-      const req = await this.commonService.getConnection()
+    console.time('updatePlanOTStatus')
 
-      // --- Bind input สำหรับฟังก์ชัน ---
+    try {
+      // ---------- Bind inputs ----------
+      const req = await this.commonService.getConnection()
       req.input('Line_CD', dto.Line_CD)
       req.input('Plan_date', dto.Plan_Start_DT.split(' ')[0]) // YYYY-MM-DD
       req.input('Plan_Start_Time', dto.Plan_Start_DT.split(' ')[1]) // HH:mm:ss
-      req.input('Plan_Stop_Time', dto.Plan_Stop_DT) // HH:mm:ss (เวลาอย่างเดียว)
+      req.input('Plan_Stop_Time', dto.Plan_Stop_DT) // HH:mm:ss
       req.input('B1', dto.B1)
       req.input('B2', dto.B2)
       req.input('B3', dto.B3)
       req.input('B4', dto.B4)
       req.input('OT', dto.OT)
 
-      // --- คำนวณเวลารวมจากฟังก์ชัน ---
-      const { recordset } = await req.query(`
+      console.log('[INPUTS]', {
+        planId,
+        isOT,
+        cycletime,
+        updatedBy,
+        Line_CD: dto.Line_CD,
+        Plan_date: dto.Plan_Start_DT.split(' ')[0],
+        Plan_Start_Time: dto.Plan_Start_DT.split(' ')[1],
+        Plan_Stop_Time: dto.Plan_Stop_DT,
+        B1: dto.B1,
+        B2: dto.B2,
+        B3: dto.B3,
+        B4: dto.B4,
+        OT: dto.OT,
+      })
+
+      // ---------- SELECT fn_get_Plan_OperTime ----------
+      console.time('SELECT fn_get_Plan_OperTime')
+      const operRes = await req.query(`
         SELECT dbo.fn_get_Plan_OperTime(
           @Line_CD, 
           @Plan_date, 
@@ -144,15 +165,34 @@ export class ProductionstatusService {
           @B1, @B2, @B3, @B4, @OT
         ) AS OperTimeMins
       `)
+      console.timeEnd('SELECT fn_get_Plan_OperTime')
 
-      const totalPlanTime = recordset?.[0]?.OperTimeMins ?? 0
+      // แสดงผลลัพธ์แบบอ่านง่าย
+      console.log(
+        '[SELECT result raw]',
+        inspect(operRes, { depth: 3, colors: true })
+      )
 
-      // --- คำนวณจำนวนเป้า (ชิ้น) ---
-      // cycletime = นาทีต่อชิ้น (เช่น 5.5 นาที/ชิ้น)
-      const planTargetFg =
-        cycletime > 0 ? Math.floor(totalPlanTime / cycletime) : 0
+      const totalPlanTime = operRes?.recordset?.[0]?.OperTimeMins ?? 0
 
-      // --- Update prod_plan ---
+      if (operRes?.recordset?.length) {
+        console.log(
+          `[OK] fn_get_Plan_OperTime => OperTimeMins = ${totalPlanTime}`
+        )
+      } else {
+        console.warn('[WARN] fn_get_Plan_OperTime: empty recordset')
+      }
+
+      // ---------- คำนวณ Target FG ----------
+      const ctNum = Number(cycletime)
+      const planTargetFg = ctNum > 0 ? Math.floor(totalPlanTime / ctNum) : 0
+      console.log('[CALC]', {
+        totalPlanTime,
+        cycletime: ctNum,
+        planTargetFg,
+      })
+
+      // ---------- UPDATE prod_plan ----------
       const updateReq = await this.commonService.getConnection()
       updateReq.input('plan_id', planId)
       updateReq.input('new_time', totalPlanTime)
@@ -164,11 +204,12 @@ export class ProductionstatusService {
       updateReq.input('b4', dto.B4)
       updateReq.input('updated_by', updatedBy)
 
-      await updateReq.query(`
+      console.time('UPDATE prod_plan')
+      const updRes = await updateReq.query(`
         UPDATE prod_plan
         SET
           plan_total_time = @new_time,
-          plan_fg_amt  = @new_target,
+          plan_fg_amt     = @new_target,
           OT              = @ot,
           B1              = @b1,
           B2              = @b2,
@@ -178,6 +219,25 @@ export class ProductionstatusService {
           updated_date    = GETDATE()
         WHERE id = @plan_id
       `)
+      console.timeEnd('UPDATE prod_plan')
+
+      console.log(
+        '[UPDATE result raw]',
+        inspect(updRes, { depth: 3, colors: true })
+      )
+
+      const rows = updRes?.rowsAffected?.[0] ?? 0
+      if (rows > 0) {
+        console.log(`[OK] UPDATE prod_plan id=${planId} rowsAffected=${rows}`)
+      } else {
+        console.warn(
+          `[WARN] UPDATE prod_plan id=${planId} rowsAffected=0 (no row updated)`
+        )
+        console.timeEnd('updatePlanOTStatus')
+        return { result: false, message: 'ไม่พบแผนที่ต้องการอัปเดต' }
+      }
+
+      console.timeEnd('updatePlanOTStatus')
 
       return {
         result: true,
@@ -187,7 +247,13 @@ export class ProductionstatusService {
         },
       }
     } catch (error: any) {
-      console.error(' Error in updatePlanOTStatus:', error)
+      console.timeEnd('updatePlanOTStatus')
+      console.error(
+        '[ERROR] updatePlanOTStatus:',
+        error?.message || error,
+        '\nstack:',
+        error?.stack
+      )
       return {
         result: false,
         message: error?.message || 'ไม่สามารถอัปเดตข้อมูลได้',
