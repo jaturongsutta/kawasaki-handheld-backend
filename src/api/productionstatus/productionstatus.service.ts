@@ -129,9 +129,9 @@ export class ProductionstatusService {
       // ---------- Bind inputs ----------
       const req = await this.commonService.getConnection()
       req.input('Line_CD', dto.Line_CD)
-      req.input('Plan_date', dto.Plan_Start_DT.split(' ')[0]) // YYYY-MM-DD
-      req.input('Plan_Start_Time', dto.Plan_Start_DT.split(' ')[1]) // HH:mm:ss
-      req.input('Plan_Stop_Time', dto.Plan_Stop_DT) // HH:mm:ss
+      req.input('Plan_date', dto.Plan_Start_DT.split('T')[0])
+      req.input('Plan_Start_Time', dto.Plan_Start_DT.substring(11, 19))
+      req.input('Plan_Stop_Time', dto.Plan_Stop_DT)
       req.input('B1', dto.B1)
       req.input('B2', dto.B2)
       req.input('B3', dto.B3)
