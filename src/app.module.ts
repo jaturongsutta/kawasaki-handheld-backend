@@ -17,6 +17,7 @@ import { LineStopModule } from './api/line-stop/line-stop.module'
 import { ProductionstatusModule } from './api/productionstatus/productionstatus.module'
 import { AlertModule } from './api/alert/alert.module'
 import { LineContextModule } from './modules/context.module'
+import { LeakModule } from './api/leak/leak.module'
 dotenv.config() // Load environment variables from .env file
 @Module({
   imports: [
@@ -49,6 +50,7 @@ dotenv.config() // Load environment variables from .env file
     ProductionstatusModule,
     AlertModule,
     LineContextModule,
+    LeakModule,
   ],
   controllers: [AppController],
   providers: [AppService],

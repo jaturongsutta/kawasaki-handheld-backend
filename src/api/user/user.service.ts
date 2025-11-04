@@ -45,7 +45,7 @@ export class UserService {
 
   async getLineList() {
     const lines = await this.dataSource.query(
-      `SELECT CAST(Line_CD AS NVARCHAR) AS Line_CD FROM M_Line`
+      `SELECT CAST(Line_CD AS NVARCHAR) AS Line_CD FROM M_Line WHERE is_Active='Y'`
     )
     let res = {
       result: true,
