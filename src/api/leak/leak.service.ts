@@ -12,16 +12,10 @@ export class LeakService {
 
   async getLeakInitialData(lineCd: string): Promise<any> {
     try {
-      // const req = await this.commonService.getConnection()
-
       const lineMachineQuery = `SELECT * FROM M_Line_Machine WHERE is_Active='Y' AND Line_CD ='${lineCd}'`
       const request = this.dataSource.createQueryRunner()
       await request.connect()
       const lineMachineList = await request.query(lineMachineQuery)
-
-      // const lineMachineList =
-      //   await this.commonService.executeQuery(lineMachineQuery)
-      console.log(lineMachineList)
 
       return {
         result: true,
@@ -80,7 +74,7 @@ export class LeakService {
           )
       `
 
-      console.log('💾 Leak_NoPlan Insert Query ===>')
+      console.log('Leak_NoPlan Insert Query ===>')
       console.log(query)
 
       await request.query(query)
@@ -90,6 +84,49 @@ export class LeakService {
     } catch (error) {
       console.error('saveLeakNoPlan Error:', error)
       return { result: false, message: error.message }
+    }
+  }
+  async getNoPlanRecordList(
+    lineCd: string,
+    Date_NoPlan: string,
+    Row_No_From: number,
+    Row_No_To: number
+  ): Promise<any> {
+    try {
+      const req = await this.commonService.getConnection()
+      req.input('Line_CD', lineCd)
+      req.input('Date_NoPlan', Date_NoPlan)
+      req.input('Row_No_From', Row_No_From)
+      req.input('Row_No_To', Row_No_To)
+
+      const planResult = await this.commonService.executeStoreProcedure(
+        `sp_handheld_NoPlan_Search`,
+        req
+      )
+
+      const records = planResult?.recordsets || []
+
+      if (
+        !records ||
+        records.length === 0 ||
+        (records[0] && records[0].length === 0)
+      ) {
+        return {
+          result: false,
+          message: 'No records found',
+        }
+      }
+
+      return {
+        result: true,
+        data: records,
+        total_loss_time: planResult.recordsets[1]?.[0]?.total_loss_time,
+      }
+    } catch (error) {
+      return {
+        result: false,
+        message: error.message,
+      }
     }
   }
 }
