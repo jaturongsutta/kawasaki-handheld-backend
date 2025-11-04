@@ -29,4 +29,19 @@ export class LeakController {
   async saveLeak(@Body() dto: LeakNoPlanDto) {
     return await this.leakService.saveLeakNoPlan(dto)
   }
+
+  @Post('noplan-list-record')
+  async getNoplanRecordList(
+    @Body('Line_CD') Line_CD: string,
+    @Body('Date_NoPlan') Date_NoPlan: string,
+    @Body('Row_No_From') Row_No_From: number,
+    @Body('Row_No_To') Row_No_To: number
+  ) {
+    return await this.leakService.getNoPlanRecordList(
+      Line_CD,
+      Date_NoPlan,
+      Row_No_From,
+      Row_No_To
+    )
+  }
 }
