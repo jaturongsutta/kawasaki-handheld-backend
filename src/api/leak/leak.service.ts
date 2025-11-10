@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { CommonService } from 'src/common/common.service'
 import { DataSource, Repository } from 'typeorm'
 import { LeakNoPlanDto } from './dto/leak_no_plan.dto'
+import { LeakTestDto } from './dto/leak_test.dto'
 
 @Injectable()
 export class LeakService {
@@ -22,6 +23,141 @@ export class LeakService {
         result: true,
         data: valueList.map(r => r.Predefine_CD)
       }
+    } catch (error) {
+      return {
+        result: false,
+        message: error.message,
+      }
+    }
+  }
+
+  async getGSCount(modelCd, serialNo): Promise<any> {
+    try {
+      console.log("model ", modelCd)
+      console.log("serialNo ", serialNo)
+
+      const q = `SELECT count(*) as count From Leak_CYH_Data WHERE Model_CD = '${modelCd}' AND Serial_No = '${serialNo}'`
+      const request = this.dataSource.createQueryRunner()
+      await request.connect()
+      const valueList = await request.query(q)
+
+      return {
+        result: true,
+        data: valueList.map(r => r.count)[0]
+      }
+    } catch (error) {
+      return {
+        result: false,
+        message: error.message,
+      }
+    }
+  }
+
+
+  async getProductionRunningLeakList(
+    Machine_No: string,
+    Work_Type: string,
+  ): Promise<any> {
+    try {
+      const req = await this.commonService.getConnection()
+      req.input('Machine_No', Machine_No)
+      req.input('Work_Type', Work_Type)
+      req.output("Return_CD", "");
+      req.output("Return_Name", "");
+
+      console.log("machine no ", Machine_No)
+      console.log("worktype ", Work_Type)
+
+      const result = await this.commonService.executeStoreProcedure(
+        `sp_Production_List_Running_Leak`,
+        req
+      )
+
+      if (result?.output["Return_CD"] == 'Fail') {
+        return {
+          result: false,
+          message: result?.output["Return_Name"],
+        }
+      }
+
+      const records = result?.recordsets || []
+
+      if (
+        !records ||
+        records.length === 0 ||
+        (records[0] && records[0].length === 0)
+      ) {
+        return {
+          result: false,
+          message: 'No records found',
+        }
+      }
+
+      return {
+        result: true,
+        data: records,
+      }
+
+    } catch (error) {
+      return {
+        result: false,
+        message: error.message,
+      }
+    }
+  }
+
+  async saveLeakTest(
+    dto: LeakTestDto
+  ): Promise<any> {
+    try {
+      const req = await this.commonService.getConnection()
+      req.input('Mapped_Plan_ID', dto.Mapped_Plan_ID)
+      req.input('Model_CD', dto.Model_CD)
+      req.input("Machine_No", dto.Machine_No);
+      req.input("Work_Type", dto.Work_Type);
+      req.input('Serial_No', dto.Serial_No)
+      req.input('GS_No', dto.GS_No)
+      req.input('Scan_Date', dto.Scan_Date)
+      req.input("Created_By", dto.CREATED_BY);
+
+      req.output("Return_CD", "");
+      req.output("Return_Name", "");
+      req.output("Return_result", "");
+
+      console.log("LeakTestDto ", dto)
+
+
+      const result = await this.commonService.executeStoreProcedure(
+        `sp_add_Leak_CYH_Data`,
+        req
+      )
+
+      if (result?.output["Return_CD"] == 'Fail') {
+        return {
+          result: false,
+          message: result?.output["Return_Name"],
+        }
+      }
+
+      const records = result?.recordsets || []
+
+      if (
+        !records ||
+        records.length === 0 ||
+        (records[0] && records[0].length === 0)
+      ) {
+        return {
+          result: true,
+          data:[],
+          message: '',
+        }
+      }
+
+      return {
+        result: true,
+        data: records,
+      }
+
     } catch (error) {
       return {
         result: false,
@@ -151,55 +287,4 @@ export class LeakService {
     }
   }
 
-  async getProductionRunningLeakList(
-    Machine_No: string,
-    Work_Type: string,
-  ): Promise<any> {
-    try {
-      const req = await this.commonService.getConnection()
-      req.input('Machine_No', Machine_No)
-      req.input('Work_Type', Work_Type)
-      req.output("Return_CD", "");
-      req.output("Return_Name", "");
-
-      console.log("machine no ", Machine_No)
-      console.log("worktype ", Work_Type)
-
-      const result = await this.commonService.executeStoreProcedure(
-        `sp_Production_List_Running_Leak`,
-        req
-      )
-    
-      if (result?.output["Return_CD"] == 'Fail') {
-        return {
-          result: false,
-          message: result?.output["Return_Name"],
-        }
-      }
-
-      const records = result?.recordsets || []
-
-      if (
-        !records ||
-        records.length === 0 ||
-        (records[0] && records[0].length === 0)
-      ) {
-        return {
-          result: false,
-          message: 'No records found',
-        }
-      }
-
-      return {
-        result: true,
-        data: records,
-      }
-
-    } catch (error) {
-      return {
-        result: false,
-        message: error.message,
-      }
-    }
-  }
 }

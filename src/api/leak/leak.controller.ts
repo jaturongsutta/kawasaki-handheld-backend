@@ -7,10 +7,12 @@ import {
   Param,
   Post,
   Put,
+  Query,
   Request,
 } from '@nestjs/common'
 import { LeakService } from './leak.service'
 import { LeakNoPlanDto } from './dto/leak_no_plan.dto'
+import { LeakTestDto } from './dto/leak_test.dto'
 
 @Controller('leak')
 export class LeakController {
@@ -25,6 +27,12 @@ export class LeakController {
     return await this.leakService.getWorkType()
   }
 
+  @Get('gs-count')
+  async getGSCount(@Query('Model_CD') Model_CD: string,
+    @Query('Serial_No') Serial_No: string,) {
+    return await this.leakService.getGSCount(Model_CD, Serial_No)
+  }
+
   @Post('production-list-running')
   async getProductionRunningLeakList(
     @Body('Machine_No') Machine_No: string,
@@ -34,6 +42,11 @@ export class LeakController {
       Machine_No,
       Work_Type,
     )
+  }
+
+  @Post('save-leak-test-cyh')
+  async saveLeakCYH(@Body() dto: LeakTestDto) {
+    return await this.leakService.saveLeakTest(dto)
   }
 
   @Post('machine-list')
