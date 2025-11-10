@@ -8,7 +8,28 @@ export class LeakService {
   constructor(
     private commonService: CommonService,
     private dataSource: DataSource
-  ) {}
+  ) { }
+
+
+  async getWorkType(): Promise<any> {
+    try {
+      const q = `SELECT  Predefine_CD FROM co_Predefine where Predefine_Group='CYH_Work_Type' and Is_Active='Y'`
+      const request = this.dataSource.createQueryRunner()
+      await request.connect()
+      const valueList = await request.query(q)
+
+      return {
+        result: true,
+        data: valueList.map(r => r.Predefine_CD)
+      }
+    } catch (error) {
+      return {
+        result: false,
+        message: error.message,
+      }
+    }
+  }
+
 
   async getLeakInitialData(lineCd: string): Promise<any> {
     try {
@@ -122,6 +143,58 @@ export class LeakService {
         data: records,
         total_loss_time: planResult.recordsets[1]?.[0]?.total_loss_time,
       }
+    } catch (error) {
+      return {
+        result: false,
+        message: error.message,
+      }
+    }
+  }
+
+  async getProductionRunningLeakList(
+    Machine_No: string,
+    Work_Type: string,
+  ): Promise<any> {
+    try {
+      const req = await this.commonService.getConnection()
+      req.input('Machine_No', Machine_No)
+      req.input('Work_Type', Work_Type)
+      req.output("Return_CD", "");
+      req.output("Return_Name", "");
+
+      console.log("machine no ", Machine_No)
+      console.log("worktype ", Work_Type)
+
+      const result = await this.commonService.executeStoreProcedure(
+        `sp_Production_List_Running_Leak`,
+        req
+      )
+    
+      if (result?.output["Return_CD"] == 'Fail') {
+        return {
+          result: false,
+          message: result?.output["Return_Name"],
+        }
+      }
+
+      const records = result?.recordsets || []
+
+      if (
+        !records ||
+        records.length === 0 ||
+        (records[0] && records[0].length === 0)
+      ) {
+        return {
+          result: false,
+          message: 'No records found',
+        }
+      }
+
+      return {
+        result: true,
+        data: records,
+      }
+
     } catch (error) {
       return {
         result: false,

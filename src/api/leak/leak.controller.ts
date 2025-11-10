@@ -20,6 +20,22 @@ export class LeakController {
     // super()
   }
 
+  @Get('worktype')
+  async getWorkType() {
+    return await this.leakService.getWorkType()
+  }
+
+  @Post('production-list-running')
+  async getProductionRunningLeakList(
+    @Body('Machine_No') Machine_No: string,
+    @Body('Work_Type') Work_Type: string,
+  ) {
+    return await this.leakService.getProductionRunningLeakList(
+      Machine_No,
+      Work_Type,
+    )
+  }
+
   @Post('machine-list')
   async getInitData(@Body('Line_CD') lineCd: string) {
     return await this.leakService.getLeakInitialData(lineCd)
