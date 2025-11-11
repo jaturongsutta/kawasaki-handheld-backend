@@ -49,6 +49,14 @@ export class LeakController {
     return await this.leakService.saveLeakTest(dto)
   }
 
+  @Post('update-leak-test-cyh')
+  async updateLeakCYH(@Body() dto: LeakTestDto) {
+    return await this.leakService.updateLeakTest(dto)
+  }
+
+
+  /* No Plan */
+
   @Post('machine-list')
   async getInitData(@Body('Line_CD') lineCd: string) {
     return await this.leakService.getLeakInitialData(lineCd)

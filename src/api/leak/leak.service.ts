@@ -136,33 +136,116 @@ export class LeakService {
         return {
           result: false,
           message: result?.output["Return_Name"],
+          data: []
         }
       }
-
-      const records = result?.recordsets || []
-
-      if (
-        !records ||
-        records.length === 0 ||
-        (records[0] && records[0].length === 0)
-      ) {
+      else if (result?.output["Return_result"] == 'OK') {
         return {
           result: true,
-          data:[],
+          data: [],
           message: '',
         }
       }
-
-      return {
-        result: true,
-        data: records,
+      else {
+        const records = result?.recordsets || []
+        return {
+          result: true,
+          data:  records,
+          // data: {
+          //   Machine_No: 'J23',
+          //   Model_CD: 'BR/BX250',
+          //   Serial: '12345',
+          //   Result: 'NG',
+          //   NG_P1: 'P1(OH)',
+          //   NG_P1_color: '#f44336',
+          //   NG_P2: 'P2(WJ)',
+          //   NG_P2_color: '#4CAF50',
+          //   NG_P3: 'P3(CC)',
+          //   NG_P3_color: '#4CAF50',
+          //   NG_TB: 'T/B',
+          //   NG_TB_color: '#FFFFFF'
+          // }
+        }
       }
-
     } catch (error) {
       return {
         result: false,
         message: error.message,
       }
+    }
+  }
+
+  async updateLeakTest(
+    dto: LeakTestDto
+  ): Promise<{ result: boolean; message?: string }> {
+    try {
+      const request = this.dataSource.createQueryRunner()
+      await request.connect()
+
+      console.log(`updateLeakTest => ${dto}`);
+
+      const query = `
+        UPDATE L
+        SET 
+            L.Casting_Date = '${dto.Casting_Date}',    
+            L.Mold_No = '${dto.Mold_No}',                
+            L.UPDATED_DATE = GETDATE(),          
+            L.UPDATED_BY = '${dto.UPDATED_BY}',              
+            L.Confirmed_date = GETDATE(),        
+            L.Confirmed_by = '${dto.UPDATED_BY}'             
+        FROM Leak_CYH_Data AS L
+          WHERE ID = '${dto.NG_Id}'
+      `
+
+      console.log('Leak_CYH_Data Update Query ===>')
+      console.log(query)
+
+      await request.query(query)
+
+      const query2 = `
+        INSERT INTO NG_Record
+          (Plan_ID,
+           Line_CD,
+           NG_Date,
+           NG_Time,
+           Quantity,
+           Reason,
+           Comment,
+           ID_Ref,
+           Status,
+           CREATED_DATE,
+           CREATED_BY,
+           UPDATED_DATE,
+           UPDATED_BY
+           )
+        VALUES
+          (
+            N'${dto.Plant_Id}',
+            N'${dto.Line_Cd}',
+            CAST(GETDATE() AS date),
+            CONVERT(time, GETDATE())  ,
+            '1',
+            null,
+            null,
+            null,
+            '00',
+            GETDATE(),
+            ${dto.UPDATED_BY},
+            GETDATE(),
+            ${dto.UPDATED_BY}
+          )
+      `
+
+      console.log('NG_Record Insert Query ===>')
+      console.log(query2)
+
+      await request.query(query2)
+      await request.release()
+
+      return { result: true, message: 'Update success' }
+    } catch (error) {
+      console.error('updateLeakTest Error:', error)
+      return { result: false, message: error.message }
     }
   }
 
