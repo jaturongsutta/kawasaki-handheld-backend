@@ -117,6 +117,9 @@ export class LeakService {
       req.input("Work_Type", dto.Work_Type);
       req.input('Serial_No', dto.Serial_No)
       req.input('GS_No', dto.GS_No)
+      req.input('CA_No', dto.CA_No)
+      req.input('CA_Date', dto.CA_Date)
+      req.input('Mold_No', dto.Mold_No)
       req.input('Scan_Date', dto.Scan_Date)
       req.input("Created_By", dto.CREATED_BY);
 
@@ -136,13 +139,14 @@ export class LeakService {
         return {
           result: false,
           message: result?.output["Return_Name"],
-          data: []
+          data: {}
         }
       }
       else if (result?.output["Return_result"] == 'OK') {
         return {
           result: true,
-          data: [],
+          data: {},
+          type: 'OK',
           message: '',
         }
       }
@@ -150,21 +154,8 @@ export class LeakService {
         const records = result?.recordsets || []
         return {
           result: true,
-          data:  records,
-          // data: {
-          //   Machine_No: 'J23',
-          //   Model_CD: 'BR/BX250',
-          //   Serial: '12345',
-          //   Result: 'NG',
-          //   NG_P1: 'P1(OH)',
-          //   NG_P1_color: '#f44336',
-          //   NG_P2: 'P2(WJ)',
-          //   NG_P2_color: '#4CAF50',
-          //   NG_P3: 'P3(CC)',
-          //   NG_P3_color: '#4CAF50',
-          //   NG_TB: 'T/B',
-          //   NG_TB_color: '#FFFFFF'
-          // }
+          type: 'NG',
+          data: records,
         }
       }
     } catch (error) {
@@ -187,7 +178,7 @@ export class LeakService {
       const query = `
         UPDATE L
         SET 
-            L.Casting_Date = '${dto.Casting_Date}',    
+            L.Casting_Date = '${dto.CA_Date}',    
             L.Mold_No = '${dto.Mold_No}',                
             L.UPDATED_DATE = GETDATE(),          
             L.UPDATED_BY = '${dto.UPDATED_BY}',              
@@ -240,6 +231,42 @@ export class LeakService {
       console.log(query2)
 
       await request.query(query2)
+      await request.release()
+
+      return { result: true, message: 'Update success' }
+    } catch (error) {
+      console.error('updateLeakTest Error:', error)
+      return { result: false, message: error.message }
+    }
+  }
+
+  async updateLeakTestOK(
+    dto: LeakTestDto
+  ): Promise<{ result: boolean; message?: string }> {
+    try {
+      const request = this.dataSource.createQueryRunner()
+      await request.connect()
+
+      console.log(`updateLeakTestOK => ${dto}`);
+
+      const query = `
+        UPDATE L
+        SET 
+        L.Casting_No = '${dto.CA_No}',    
+            L.Casting_Date = '${dto.CA_Date}',    
+            L.Mold_No = '${dto.Mold_No}',                
+            L.UPDATED_DATE = GETDATE(),          
+            L.UPDATED_BY = '${dto.UPDATED_BY}',              
+            L.Confirmed_date = GETDATE(),        
+            L.Confirmed_by = '${dto.UPDATED_BY}'             
+        FROM Leak_CYH_Data AS L
+          WHERE ID = '${dto.NG_Id}'
+      `
+
+      console.log('Leak_CYH_Data Update Query ===>')
+      console.log(query)
+
+      await request.query(query)
       await request.release()
 
       return { result: true, message: 'Update success' }

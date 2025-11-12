@@ -12,6 +12,7 @@ export class LeakTestDto {
   Line_Cd: string
   NG_Id: string
   Plant_Id: string
-  Casting_Date: string
   Mold_No: string
+  CA_No: string
+  CA_Date: string
 }
