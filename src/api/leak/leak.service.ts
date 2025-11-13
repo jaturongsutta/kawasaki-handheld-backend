@@ -134,6 +134,7 @@ export class LeakService {
         `sp_add_Leak_CYH_Data`,
         req
       )
+      const records = result?.recordsets || []
 
       if (result?.output["Return_CD"] == 'Fail') {
         return {
@@ -145,17 +146,16 @@ export class LeakService {
       else if (result?.output["Return_result"] == 'OK') {
         return {
           result: true,
-          data: {},
+          data: records.length > 0 ? records[0].length > 0 ? records[0][0] : {} : {},
           type: 'OK',
           message: '',
         }
       }
       else {
-        const records = result?.recordsets || []
         return {
           result: true,
           type: 'NG',
-          data: records,
+          data: records.length > 0 ? records[0].length > 0 ? records[0][0] : {} : {},
         }
       }
     } catch (error) {
@@ -178,6 +178,7 @@ export class LeakService {
       const query = `
         UPDATE L
         SET 
+            L.Casting_No = '${dto.CA_No}',
             L.Casting_Date = '${dto.CA_Date}',    
             L.Mold_No = '${dto.Mold_No}',                
             L.UPDATED_DATE = GETDATE(),          
@@ -252,7 +253,7 @@ export class LeakService {
       const query = `
         UPDATE L
         SET 
-        L.Casting_No = '${dto.CA_No}',    
+            L.Casting_No = '${dto.CA_No}',    
             L.Casting_Date = '${dto.CA_Date}',    
             L.Mold_No = '${dto.Mold_No}',                
             L.UPDATED_DATE = GETDATE(),          
