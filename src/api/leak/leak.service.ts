@@ -11,7 +11,58 @@ export class LeakService {
     private dataSource: DataSource
   ) { }
 
+  /* CYH NG Record */
+  async searchNGCYH(
+    Machine_No: string
+  ): Promise<any> {
+    try {
+      const req = await this.commonService.getConnection()
+      req.input('Machine_No', Machine_No)
+      req.output("Return_CD", "");
+      req.output("Return_Name", "");
 
+      console.log("machine no ", Machine_No)
+
+      const result = await this.commonService.executeStoreProcedure(
+        `sp_search_NG_CYH`,
+        req
+      )
+
+      if (result?.output["Return_CD"] == 'Fail') {
+        return {
+          result: false,
+          message: result?.output["Return_Name"],
+        }
+      }
+
+      const records = result?.recordsets || []
+
+      if (
+        !records ||
+        records.length === 0 ||
+        (records[0] && records[0].length === 0)
+      ) {
+        return {
+          result: false,
+          message: 'No records found',
+        }
+      }
+
+      return {
+        result: true,
+        data: records.length > 0 ? records[0] :[]
+      }
+
+    } catch (error) {
+      return {
+        result: false,
+        message: error.message,
+      }
+    }
+  }
+  /* End  CYH NG Record */
+
+  /* CYH Leak Test */
   async getWorkType(): Promise<any> {
     try {
       const q = `SELECT  Predefine_CD FROM co_Predefine where Predefine_Group='CYH_Work_Type' and Is_Active='Y'`
@@ -95,7 +146,7 @@ export class LeakService {
 
       return {
         result: true,
-        data: records,
+        data: records.length > 0 ? records[0] :[],
       }
 
     } catch (error) {
@@ -276,6 +327,7 @@ export class LeakService {
       return { result: false, message: error.message }
     }
   }
+  /* End CYH Leak Test */
 
 
   async getLeakInitialData(lineCd: string): Promise<any> {

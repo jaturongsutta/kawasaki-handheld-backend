@@ -13,15 +13,28 @@ import {
 import { LeakService } from './leak.service'
 import { LeakNoPlanDto } from './dto/leak_no_plan.dto'
 import { LeakTestDto } from './dto/leak_test.dto'
+import { BaseController } from 'src/base.controller'
 
 @Controller('leak')
-export class LeakController {
+export class LeakController  {
   private readonly logger = new Logger(LeakController.name)
 
   constructor(private leakService: LeakService) {
     // super()
   }
 
+  /* CYH NG Record */
+  @Post('search-ng-cyh')
+  async searchNGCYH(
+    @Body('Machine_No') Machine_No: string,
+  ) {
+    return await this.leakService.searchNGCYH(
+      Machine_No
+    )
+  }
+  /* End CYH NG Record */
+
+  /* CYH Leak Test */
   @Get('worktype')
   async getWorkType() {
     return await this.leakService.getWorkType()
@@ -58,10 +71,9 @@ export class LeakController {
   async updateOKLeakCYH(@Body() dto: LeakTestDto) {
     return await this.leakService.updateLeakTestOK(dto)
   }
+  /* End CYH Leak Test */
 
-  
   /* No Plan */
-
   @Post('machine-list')
   async getInitData(@Body('Line_CD') lineCd: string) {
     return await this.leakService.getLeakInitialData(lineCd)
