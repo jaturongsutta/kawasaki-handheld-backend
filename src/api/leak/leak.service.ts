@@ -263,7 +263,7 @@ export class LeakService {
            )
         VALUES
           (
-            N'${dto.Plant_Id}',
+            N'${dto.Plan_Id}',
             N'${dto.Line_Cd}',
             CAST(GETDATE() AS date),
             CONVERT(time, GETDATE())  ,
