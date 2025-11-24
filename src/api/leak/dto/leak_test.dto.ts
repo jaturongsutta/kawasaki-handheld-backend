@@ -9,7 +9,7 @@ export class LeakTestDto {
   CREATED_BY: number
   UPDATED_BY: number
 
-  Line_Cd: string
+  Line_CD: string
   NG_Id: string
   Plan_Id: string
   Mold_No: string

@@ -50,7 +50,7 @@ export class LeakService {
 
       return {
         result: true,
-        data: records.length > 0 ? records[0] :[]
+        data: records.length > 0 ? records[0] : []
       }
 
     } catch (error) {
@@ -146,7 +146,7 @@ export class LeakService {
 
       return {
         result: true,
-        data: records.length > 0 ? records[0] :[],
+        data: records.length > 0 ? records[0] : [],
       }
 
     } catch (error) {
@@ -224,104 +224,32 @@ export class LeakService {
       const request = this.dataSource.createQueryRunner()
       await request.connect()
 
-      console.log(`updateLeakTest => ${dto}`);
+      const req = await this.commonService.getConnection()
+      req.input('Line_CD', dto.Line_CD)
+      req.input('ID', dto.NG_Id)
+      req.input("Casting_No", dto.CA_No);
+      req.input("Casting_Date", dto.CA_Date);
+      req.input('Mold_No', dto.Mold_No)
+      req.input("Confirm_by", dto.UPDATED_BY);
 
-      const query = `
-        UPDATE L
-        SET 
-            L.Casting_No = '${dto.CA_No}',
-            L.Casting_Date = '${dto.CA_Date}',    
-            L.Mold_No = '${dto.Mold_No}',                
-            L.UPDATED_DATE = GETDATE(),          
-            L.UPDATED_BY = '${dto.UPDATED_BY}',              
-            L.Confirmed_date = GETDATE(),        
-            L.Confirmed_by = '${dto.UPDATED_BY}'             
-        FROM Leak_CYH_Data AS L
-          WHERE ID = '${dto.NG_Id}'
-      `
+      req.output("Return_CD", "");
 
-      console.log('Leak_CYH_Data Update Query ===>')
-      console.log(query)
+      console.log("updateLeakTestOK ", dto)
 
-      await request.query(query)
+      const result = await this.commonService.executeStoreProcedure(
+        `sp_update_Leak_CYH_Data`,
+        req
+      )
 
-      const query2 = `
-        INSERT INTO NG_Record
-          (Plan_ID,
-           Line_CD,
-           NG_Date,
-           NG_Time,
-           Quantity,
-           Reason,
-           Comment,
-           ID_Ref,
-           Status,
-           CREATED_DATE,
-           CREATED_BY,
-           UPDATED_DATE,
-           UPDATED_BY
-           )
-        VALUES
-          (
-            N'${dto.Plan_Id}',
-            N'${dto.Line_Cd}',
-            CAST(GETDATE() AS date),
-            CONVERT(time, GETDATE())  ,
-            '1',
-            null,
-            null,
-            null,
-            '00',
-            GETDATE(),
-            ${dto.UPDATED_BY},
-            GETDATE(),
-            ${dto.UPDATED_BY}
-          )
-      `
-
-      console.log('NG_Record Insert Query ===>')
-      console.log(query2)
-
-      await request.query(query2)
-      await request.release()
-
-      return { result: true, message: 'Update success' }
-    } catch (error) {
-      console.error('updateLeakTest Error:', error)
-      return { result: false, message: error.message }
-    }
-  }
-
-  async updateLeakTestOK(
-    dto: LeakTestDto
-  ): Promise<{ result: boolean; message?: string }> {
-    try {
-      const request = this.dataSource.createQueryRunner()
-      await request.connect()
-
-      console.log(`updateLeakTestOK => ${dto}`);
-
-      const query = `
-        UPDATE L
-        SET 
-            L.Casting_No = '${dto.CA_No}',    
-            L.Casting_Date = '${dto.CA_Date}',    
-            L.Mold_No = '${dto.Mold_No}',                
-            L.UPDATED_DATE = GETDATE(),          
-            L.UPDATED_BY = '${dto.UPDATED_BY}',              
-            L.Confirmed_date = GETDATE(),        
-            L.Confirmed_by = '${dto.UPDATED_BY}'             
-        FROM Leak_CYH_Data AS L
-          WHERE ID = '${dto.NG_Id}'
-      `
-
-      console.log('Leak_CYH_Data Update Query ===>')
-      console.log(query)
-
-      await request.query(query)
-      await request.release()
-
-      return { result: true, message: 'Update success' }
+      if (result?.output["Return_CD"] == 'Success') {
+        return { result: true, message: 'Update success' }
+      }
+      else {
+        return {
+          result: false,
+         message: 'Update failed' 
+        }
+      }
     } catch (error) {
       console.error('updateLeakTest Error:', error)
       return { result: false, message: error.message }

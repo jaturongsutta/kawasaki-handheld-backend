@@ -69,7 +69,7 @@ export class LeakController  {
 
   @Post('update-leak-test-ok-cyh')
   async updateOKLeakCYH(@Body() dto: LeakTestDto) {
-    return await this.leakService.updateLeakTestOK(dto)
+    return await this.leakService.updateLeakTest(dto)
   }
   /* End CYH Leak Test */
 
