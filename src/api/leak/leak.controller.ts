@@ -16,7 +16,7 @@ import { LeakTestDto } from './dto/leak_test.dto'
 import { BaseController } from 'src/base.controller'
 
 @Controller('leak')
-export class LeakController  {
+export class LeakController {
   private readonly logger = new Logger(LeakController.name)
 
   constructor(private leakService: LeakService) {
@@ -71,7 +71,27 @@ export class LeakController  {
   async updateOKLeakCYH(@Body() dto: LeakTestDto) {
     return await this.leakService.updateLeakTest(dto)
   }
+
+  @Post('check-test-result')
+  async checkTestResult(@Body('Machine_No') machineNo: string) {
+    return await this.leakService.checkTestResult(machineNo)
+  }
+
+  @Post('get-leak-cyh')
+  async getLeakCYH(@Body('Serial_No') serialNo: string, @Body('Model_CD') modelCd: string) {
+    return await this.leakService.getLeakCYH(serialNo, modelCd)
+  }
+
+  @Post('get-ok-ng')
+  async getOKNG(@Body('Machine_No') machineNo: string) {
+    return await this.leakService.getOKNG(machineNo)
+  }
   /* End CYH Leak Test */
+
+  @Post('machine-all')
+  async getMachinePredefineAll() {
+    return await this.leakService.getMachinePredefineAll()
+  }
 
   /* No Plan */
   @Post('machine-list')

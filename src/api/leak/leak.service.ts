@@ -247,7 +247,7 @@ export class LeakService {
       else {
         return {
           result: false,
-         message: 'Update failed' 
+          message: 'Update failed'
         }
       }
     } catch (error) {
@@ -255,8 +255,106 @@ export class LeakService {
       return { result: false, message: error.message }
     }
   }
+
+  async checkTestResult(machineNo: string): Promise<any> {
+    try {
+      const q = `select top(1) * from Leak_CYH_Data where Machine_No = '${machineNo}' and Tested_Status is not null and Confirmed_DATE is null order by updated_date`
+      const request = this.dataSource.createQueryRunner()
+      await request.connect()
+      const valueList = await request.query(q)
+
+      return {
+        result: true,
+        data: valueList
+      }
+    } catch (error) {
+      return {
+        result: false,
+        message: error.message,
+      }
+    }
+  }
+
+  async getLeakCYH(serialNo: string, modelCd: string): Promise<any> {
+    try {
+      const q = `select top(1) * from Leak_CYH_Data where Serial_No = '${serialNo}' and Model_CD= '${modelCd}' order by updated_date desc
+`
+      const request = this.dataSource.createQueryRunner()
+      await request.connect()
+      const valueList = await request.query(q)
+
+      return {
+        result: true,
+        data: valueList
+      }
+    } catch (error) {
+      return {
+        result: false,
+        message: error.message,
+      }
+    }
+  }
+
+  async getOKNG(machineNo: string): Promise<any> {
+    try {
+      const q = `select top(1) Machine_No,Model_CD,Serial_No,
+                case when Tested_Status=2 then 'NG' else 'OK' end  test_result, --23/12/2025
+                'P1 (OH)' as NG_P1,  --1=OK, 2=NG, 0=none ส่วน OH
+                'P2 (WJ)' as NG_P2,  
+                'PS (CC)' as NG_P3,
+                'P4' as NG_P4,
+                'T/B' as NG_TB,
+                case when NG_P1=1 then '00FF00' when NG_P1=2 then 'FF0000' else 'FFFFFF' end NG_P1_color,
+                case when NG_P2=1 then '00FF00' when NG_P2=2 then 'FF0000' else 'FFFFFF' end  as NG_P2_color,
+                case when NG_P3=1 then '00FF00' when NG_P3=2 then 'FF0000' else 'FFFFFF' end  as NG_P3_color,
+                case when NG_P4=1 then '00FF00' when NG_P4=2 then 'FF0000' else 'FFFFFF' end  as NG_P4_color,
+                case when NG_TB=1 then '00FF00' when NG_TB=2 then 'FF0000' else 'FFFFFF' end  as NG_TB_color,
+                Casting_No as CA_No,
+                Casting_Date as CA_Date,
+                Mold_No as Mold_No,
+                mapped_plan_id as plan_id
+                from Leak_CYH_Data
+                where Machine_No = '${machineNo}'
+                and Tested_Status is not null
+                and Confirmed_DATE is null  
+                order by Updated_Date
+
+`
+      const request = this.dataSource.createQueryRunner()
+      await request.connect()
+      const valueList = await request.query(q)
+
+      return {
+        result: true,
+        data: valueList
+      }
+    } catch (error) {
+      return {
+        result: false,
+        message: error.message,
+      }
+    }
+  }
   /* End CYH Leak Test */
 
+  async getMachinePredefineAll(): Promise<any> {
+    try {
+      const q = `select Predefine_CD Value, Value_EN Title from co_Predefine where Predefine_Group='Leak_CYH_Machine' and Is_Active = 'Y'`
+      const request = this.dataSource.createQueryRunner()
+      await request.connect()
+      const valueList = await request.query(q)
+
+      return {
+        result: true,
+        data: valueList
+      }
+    } catch (error) {
+      return {
+        result: false,
+        message: error.message,
+      }
+    }
+  }
 
   async getLeakInitialData(lineCd: string): Promise<any> {
     try {
