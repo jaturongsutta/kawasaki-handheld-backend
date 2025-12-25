@@ -62,6 +62,11 @@ export class LeakController {
     return await this.leakService.saveLeakTest(dto)
   }
 
+  @Post('check-machine')
+  async checkMachine(@Body('Machine_No') Machine_No: string) {
+    return await this.leakService.checkMachine(Machine_No)
+  }
+
   @Post('update-leak-test-cyh')
   async updateLeakCYH(@Body() dto: LeakTestDto) {
     return await this.leakService.updateLeakTest(dto)

@@ -275,6 +275,27 @@ export class LeakService {
     }
   }
 
+
+  async checkMachine(machineNo: string): Promise<any> {
+    try {
+      const q = `SElECT distinct Machine_No FROM M_Line_Machine WHERE is_Active='Y' and Machine_No ='${machineNo}'`;
+
+      const request = this.dataSource.createQueryRunner()
+      await request.connect()
+      const valueList = await request.query(q)
+
+      return {
+        result: true,
+        data: valueList
+      }
+    } catch (error) {
+      return {
+        result: false,
+        message: error.message,
+      }
+    }
+  }
+
   async getLeakCYH(serialNo: string, modelCd: string): Promise<any> {
     try {
       const q = `select top(1) * from Leak_CYH_Data where Serial_No = '${serialNo}' and Model_CD= '${modelCd}' order by updated_date desc
@@ -393,40 +414,35 @@ export class LeakService {
       const request = this.dataSource.createQueryRunner()
       await request.connect()
 
-      const query = `
-        INSERT INTO Leak_NoPlan
-          (Machine_No,
-           Start_Date,
-           Start_Time,
-           End_Date,
-           End_Time,
-           Loss_Time,
-           CREATED_DATE,
-           CREATED_BY,
-           UPDATED_DATE,
-           UPDATED_BY)
-        VALUES
-          (
-            N'${dto.Machine_No}',
-            N'${dto.Start_Date}',
-            N'${dto.Start_Time}',
-            N'${dto.End_Date}',
-            N'${dto.End_Time}',
-            ${dto.Loss_Time},
-            GETDATE(),
-            ${dto.CREATED_BY},
-            GETDATE(),
-            ${dto.UPDATED_BY}
-          )
-      `
+      const req = await this.commonService.getConnection()
+      req.input('Machine_No', dto.Machine_No)
+      req.input('Start_Date', dto.Start_Date)
+      req.input("Start_Time", dto.Start_Time);
+      req.input("End_Date", dto.End_Date);
+      req.input('End_Time', dto.End_Time)
+      req.input("Created_By", dto.CREATED_BY);
 
-      console.log('Leak_NoPlan Insert Query ===>')
-      console.log(query)
+      req.output("Return_CD", "");
+      req.output("Return_Name", "");
+      req.output("Return_result", "");
 
-      await request.query(query)
-      await request.release()
 
-      return { result: true, message: 'Insert success' }
+      console.log("sp_add_Leak_NoPlan ", dto)
+
+      const result = await this.commonService.executeStoreProcedure(
+        `sp_add_Leak_NoPlan`,
+        req
+      )
+
+      if (result?.output["Return_CD"] == 'Success') {
+        return { result: true, message: 'Insert success' }
+      }
+      else {
+        return {
+          result: false,
+          message: result?.output["Return_CD"]
+        }
+      }
     } catch (error) {
       console.error('saveLeakNoPlan Error:', error)
       return { result: false, message: error.message }
