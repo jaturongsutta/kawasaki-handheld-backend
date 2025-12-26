@@ -318,28 +318,30 @@ export class LeakService {
 
   async getOKNG(machineNo: string): Promise<any> {
     try {
-      const q = `select top(1) Machine_No,Model_CD,Serial_No,
-                case when Tested_Status=2 then 'NG' else 'OK' end  test_result, --23/12/2025
-                'P1 (OH)' as NG_P1,  --1=OK, 2=NG, 0=none ส่วน OH
+      const q = `select d.Machine_No, d.Model_CD, d.Serial_No as Serial,
+                case when d.Tested_Status=2 then 'NG' else 'OK' end  test_result,
+                'P1 (OH)' as NG_P1,  
                 'P2 (WJ)' as NG_P2,  
                 'PS (CC)' as NG_P3,
                 'P4' as NG_P4,
                 'T/B' as NG_TB,
-                case when NG_P1=1 then '00FF00' when NG_P1=2 then 'FF0000' else 'FFFFFF' end NG_P1_color,
-                case when NG_P2=1 then '00FF00' when NG_P2=2 then 'FF0000' else 'FFFFFF' end  as NG_P2_color,
-                case when NG_P3=1 then '00FF00' when NG_P3=2 then 'FF0000' else 'FFFFFF' end  as NG_P3_color,
-                case when NG_P4=1 then '00FF00' when NG_P4=2 then 'FF0000' else 'FFFFFF' end  as NG_P4_color,
-                case when NG_TB=1 then '00FF00' when NG_TB=2 then 'FF0000' else 'FFFFFF' end  as NG_TB_color,
-                Casting_No as CA_No,
-                Casting_Date as CA_Date,
-                Mold_No as Mold_No,
-                mapped_plan_id as plan_id,
-                ID as Id
-                from Leak_CYH_Data
-                where Machine_No = '${machineNo}'
-                and Tested_Status is not null
-                and Confirmed_DATE is null  
-                order by Updated_Date
+                case when d.NG_P1=1 then '00FF00' when d.NG_P1=2 then 'FF0000' else 'FFFFFF' end NG_P1_color,
+                case when d.NG_P2=1 then '00FF00' when d.NG_P2=2 then 'FF0000' else 'FFFFFF' end  as NG_P2_color,
+                case when d.NG_P3=1 then '00FF00' when d.NG_P3=2 then 'FF0000' else 'FFFFFF' end  as NG_P3_color,
+                case when d.NG_P4=1 then '00FF00' when d.NG_P4=2 then 'FF0000' else 'FFFFFF' end  as NG_P4_color,
+                case when d.NG_TB=1 then '00FF00' when d.NG_TB=2 then 'FF0000' else 'FFFFFF' end  as NG_TB_color,
+                d.Casting_No as CA_No,
+                d.Casting_Date as CA_Date,
+                d.Mold_No as Mold_No,
+                d.mapped_plan_id as    plan_id,
+                d.id as Id,
+                p.Line_CD
+                from Leak_CYH_Data d
+                left join Prod_Plan p on d.Mapped_Plan_ID = p.ID
+                where d.Machine_No = '${machineNo}' --@Machine_No
+                and d.Tested_Status is not null
+                and d.Confirmed_DATE is null  
+                order by d.Updated_Date
 
 `
       const request = this.dataSource.createQueryRunner()
