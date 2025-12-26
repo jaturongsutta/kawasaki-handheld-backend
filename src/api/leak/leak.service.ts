@@ -333,7 +333,8 @@ export class LeakService {
                 Casting_No as CA_No,
                 Casting_Date as CA_Date,
                 Mold_No as Mold_No,
-                mapped_plan_id as plan_id
+                mapped_plan_id as plan_id,
+                ID as Id
                 from Leak_CYH_Data
                 where Machine_No = '${machineNo}'
                 and Tested_Status is not null
