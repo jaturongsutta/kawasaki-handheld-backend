@@ -202,10 +202,17 @@ export class LeakService {
           message: '',
         }
       }
-      else {
+      else if (result?.output["Return_result"] == 'NG') {
         return {
           result: true,
           type: 'NG',
+          data: records.length > 0 ? records[0].length > 0 ? records[0][0] : {} : {},
+        }
+      }
+      else {
+        return {
+          result: true,
+          type: null,
           data: records.length > 0 ? records[0].length > 0 ? records[0][0] : {} : {},
         }
       }
@@ -318,7 +325,7 @@ export class LeakService {
 
   async getOKNG(machineNo: string): Promise<any> {
     try {
-      const q = `select d.Machine_No, d.Model_CD, d.Serial_No as Serial,
+      const q = `select d.Machine_No, d.Model_CD, d.Serial_No,
                 case when d.Tested_Status=2 then 'NG' else 'OK' end  test_result,
                 'P1 (OH)' as NG_P1,  
                 'P2 (WJ)' as NG_P2,  
@@ -343,7 +350,7 @@ export class LeakService {
                 and d.Confirmed_DATE is null  
                 order by d.Updated_Date
 
-`
+` 
       const request = this.dataSource.createQueryRunner()
       await request.connect()
       const valueList = await request.query(q)
