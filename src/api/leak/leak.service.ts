@@ -187,10 +187,10 @@ export class LeakService {
       )
       const records = result?.recordsets || []
 
-      if (result?.output["Return_CD"] == 'Fail') {
+      if (result?.output["Return_CD"].includes('Fail')) {
         return {
           result: false,
-          message: result?.output["Return_Name"],
+          message: result?.output["Return_CD"],
           data: {}
         }
       }
@@ -459,14 +459,14 @@ export class LeakService {
     }
   }
   async getNoPlanRecordList(
-    lineCd: string,
+    machineNo: string,
     Date_NoPlan: string,
     Row_No_From: number,
     Row_No_To: number
   ): Promise<any> {
     try {
       const req = await this.commonService.getConnection()
-      req.input('Line_CD', lineCd)
+      req.input('machine_No', machineNo)
       req.input('Date_NoPlan', Date_NoPlan)
       req.input('Row_No_From', Row_No_From)
       req.input('Row_No_To', Row_No_To)

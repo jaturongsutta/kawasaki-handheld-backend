@@ -111,13 +111,13 @@ export class LeakController {
 
   @Post('noplan-list-record')
   async getNoplanRecordList(
-    @Body('Line_CD') Line_CD: string,
+    @Body('machine_No') machine_No: string,
     @Body('Date_NoPlan') Date_NoPlan: string,
     @Body('Row_No_From') Row_No_From: number,
     @Body('Row_No_To') Row_No_To: number
   ) {
     return await this.leakService.getNoPlanRecordList(
-      Line_CD,
+      machine_No,
       Date_NoPlan,
       Row_No_From,
       Row_No_To
