@@ -51,10 +51,26 @@ export class LeakController {
     @Body('Machine_No') Machine_No: string,
     @Body('Work_Type') Work_Type: string,
   ) {
-    return await this.leakService.getProductionRunningLeakList(
-      Machine_No,
-      Work_Type,
+    this.logger.log(
+      `[API][production-list-running][start] Machine_No=${Machine_No}, Work_Type=${Work_Type}`
     )
+    try {
+      const result = await this.leakService.getProductionRunningLeakList(
+        Machine_No,
+        Work_Type,
+      )
+      const rowCount = Array.isArray(result?.data) ? result.data.length : 0
+      this.logger.log(
+        `[API][production-list-running][end] result=${result?.result}, rows=${rowCount}, message=${result?.message ?? ''}`
+      )
+      return result
+    } catch (error: any) {
+      this.logger.error(
+        `[API][production-list-running][error] Machine_No=${Machine_No}, Work_Type=${Work_Type}, message=${error?.message}`,
+        error?.stack
+      )
+      throw error
+    }
   }
 
   @Post('save-leak-test-cyh')
@@ -79,7 +95,21 @@ export class LeakController {
 
   @Post('check-test-result')
   async checkTestResult(@Body('Machine_No') machineNo: string) {
-    return await this.leakService.checkTestResult(machineNo)
+    this.logger.log(`[API][check-test-result][start] Machine_No=${machineNo}`)
+    try {
+      const result = await this.leakService.checkTestResult(machineNo)
+      const rowCount = Array.isArray(result?.data) ? result.data.length : 0
+      this.logger.log(
+        `[API][check-test-result][end] result=${result?.result}, rows=${rowCount}, message=${result?.message ?? ''}`
+      )
+      return result
+    } catch (error: any) {
+      this.logger.error(
+        `[API][check-test-result][error] Machine_No=${machineNo}, message=${error?.message}`,
+        error?.stack
+      )
+      throw error
+    }
   }
 
   @Post('get-leak-cyh')
