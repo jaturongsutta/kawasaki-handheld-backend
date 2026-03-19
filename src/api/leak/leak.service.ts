@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { CommonService } from 'src/common/common.service'
 import { DataSource, Repository } from 'typeorm'
 import { LeakNoPlanDto } from './dto/leak_no_plan.dto'
@@ -6,6 +6,8 @@ import { LeakTestDto } from './dto/leak_test.dto'
 
 @Injectable()
 export class LeakService {
+  private readonly logger = new Logger(LeakService.name)
+
   constructor(
     private commonService: CommonService,
     private dataSource: DataSource
@@ -109,6 +111,9 @@ export class LeakService {
     Machine_No: string,
     Work_Type: string,
   ): Promise<any> {
+    this.logger.log(
+      `[getProductionRunningLeakList][start] Machine_No=${Machine_No}, Work_Type=${Work_Type}`
+    )
     try {
       const req = await this.commonService.getConnection()
       req.input('Machine_No', Machine_No)
@@ -123,8 +128,14 @@ export class LeakService {
         `sp_Production_List_Running_Leak`,
         req
       )
+      this.logger.log(
+        `[getProductionRunningLeakList][sp-output] ${JSON.stringify(result?.output ?? {})}`
+      )
 
       if (result?.output["Return_CD"] == 'Fail') {
+        this.logger.warn(
+          `[getProductionRunningLeakList][fail] Machine_No=${Machine_No}, Work_Type=${Work_Type}, Return_Name=${result?.output["Return_Name"]}`
+        )
         return {
           result: false,
           message: result?.output["Return_Name"],
@@ -138,18 +149,29 @@ export class LeakService {
         records.length === 0 ||
         (records[0] && records[0].length === 0)
       ) {
+        this.logger.warn(
+          `[getProductionRunningLeakList][empty] Machine_No=${Machine_No}, Work_Type=${Work_Type}`
+        )
         return {
           result: false,
           message: 'No records found',
         }
       }
 
+      const rowCount = records.length > 0 ? records[0].length : 0
+      this.logger.log(
+        `[getProductionRunningLeakList][success] Machine_No=${Machine_No}, Work_Type=${Work_Type}, rows=${rowCount}`
+      )
       return {
         result: true,
         data: records.length > 0 ? records[0] : [],
       }
 
-    } catch (error) {
+    } catch (error: any) {
+      this.logger.error(
+        `[getProductionRunningLeakList][error] Machine_No=${Machine_No}, Work_Type=${Work_Type}, message=${error?.message}`,
+        error?.stack
+      )
       return {
         result: false,
         message: error.message,
@@ -264,17 +286,25 @@ export class LeakService {
   }
 
   async checkTestResult(machineNo: string): Promise<any> {
+    this.logger.log(`[checkTestResult][start] Machine_No=${machineNo}`)
     try {
       const q = `select top(1) * from Leak_CYH_Data where Machine_No = '${machineNo}' and Tested_Status is not null and Confirmed_DATE is null order by updated_date`
       const request = this.dataSource.createQueryRunner()
       await request.connect()
       const valueList = await request.query(q)
+      this.logger.log(
+        `[checkTestResult][success] Machine_No=${machineNo}, rows=${valueList?.length ?? 0}`
+      )
 
       return {
         result: true,
         data: valueList
       }
-    } catch (error) {
+    } catch (error: any) {
+      this.logger.error(
+        `[checkTestResult][error] Machine_No=${machineNo}, message=${error?.message}`,
+        error?.stack
+      )
       return {
         result: false,
         message: error.message,

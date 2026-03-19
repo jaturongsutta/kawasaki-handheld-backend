@@ -9,6 +9,7 @@ import { UserChangePasswordDto } from './dto/user-change-password.dto'
 import { BaseResponse } from 'src/common/base-response'
 import { UserRole } from 'src/entity/user-role.entity'
 import { LineContextService } from 'src/_services/line-context.service'
+import { JwtService } from '@nestjs/jwt'
 
 @Injectable()
 export class UserService {
@@ -18,8 +19,13 @@ export class UserService {
     private userRoleRepository: Repository<UserRole>,
     private commonService: CommonService,
     private dataSource: DataSource,
-    private readonly lineContext: LineContextService
+    private readonly lineContext: LineContextService,
+    private readonly jwtService: JwtService
   ) {}
+
+  private getJwtExpireValue(): string {
+    return process.env.APP_JWT_EXPIRE || '60m'
+  }
 
   async getByID(id: number): Promise<UserDto> {
     const dto = new UserDto()
@@ -58,7 +64,7 @@ export class UserService {
     username: string,
     password: string,
     lineCd: string
-  ): Promise<{ result: boolean; data: any } | null> {
+  ): Promise<{ result: boolean; data: any; token: string } | null> {
     try {
       const req = await this.commonService.getConnection()
       req.input('Line_CD', lineCd)
@@ -88,6 +94,15 @@ export class UserService {
         const userId = result[0].User_ID
         console.log(userId)
 
+        const payload = {
+          userId: userId,
+          username: username,
+          lineCd: lineCd,
+        }
+        const token = await this.jwtService.signAsync(payload, {
+          expiresIn: this.getJwtExpireValue(),
+        })
+
         const mockUser: User = {
           userId: 1,
           username: username,
@@ -108,6 +123,7 @@ export class UserService {
 
         return {
           result: true,
+          token: token,
           data: {
             userId: userId,
             username: username,
